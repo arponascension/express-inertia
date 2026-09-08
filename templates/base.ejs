@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title><%= typeof title !== 'undefined' ? title : (page && page.props && page.props.title ? page.props.title : 'App') %></title>
+    @inertiaHead
+    @viteReactRefresh
+    @vite('src/main.js')
+  </head>
+  <body class="font-sans antialiased bg-gray-50 text-gray-900">
+    @inertia
+  </body>
+</html>

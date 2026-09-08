@@ -9,7 +9,7 @@ import { validateComponentName, DEFAULT_COMPONENT_NAME_PATTERN } from './utils.j
  * @example
  * ```ts
  * import express from 'express';
- * import inertia from 'express-inertia';
+  * import inertia from '@arponascension/express-inertia';
  *
  * const app = express();
  * app.use(inertia({

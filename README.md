@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@arponascension/express-inertia.svg)](https://npmjs.com/package/@arponascension/express-inertia)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
-[![Bundle Size](https://img.shields.io/badge/bundle_minified-40KB-green.svg)](https://github.com/Arpon/express-inertia)
+[![Bundle Size](https://img.shields.io/badge/bundle_minified-40KB-green.svg)](https://github.com/arponascension/express-inertia)
 
 **Next-generation Inertia.js adapter and middleware for Express.js** with Blade-style EJS directives, Vite integration, SSR resilience, security hardening, and first-class TypeScript support.
 
@@ -45,7 +45,7 @@ npm install express
 ```ts
 import express from 'express';
 import path from 'path';
-import { inertia, createInertiaEngine } from 'express-inertia';
+import { inertia, createInertiaEngine } from '@arponascension/express-inertia';
 
 const app = express();
 
@@ -121,7 +121,7 @@ Write Laravel Blade-style syntax inside EJS templates:
 ### Custom Directives
 
 ```ts
-import { registerDirective } from 'express-inertia';
+import { registerDirective } from '@arponascension/express-inertia';
 
 registerDirective('uppercase', (args) => `<%= (${args}).toUpperCase() %>`);
 ```
@@ -197,7 +197,7 @@ res.inertia('SecretReport');
 ## 🔄 Prop Helpers
 
 ```ts
-import { lazy, always, defer, merge, optional } from 'express-inertia';
+import { lazy, always, defer, merge, optional } from '@arponascension/express-inertia';
 
 app.get('/dashboard', (req, res) => {
   res.inertia('Dashboard', {
@@ -244,7 +244,7 @@ app.use(
 ### Prefetch Helpers
 
 ```ts
-import { createPrefetchHelper } from 'express-inertia';
+import { createPrefetchHelper } from '@arponascension/express-inertia';
 
 const prefetch = createPrefetchHelper(viteHelper);
 
@@ -321,7 +321,7 @@ Automatically strips functions and undefined values from template data.
 ### SRI Hash Generation
 
 ```ts
-import { generateSriHash } from 'express-inertia';
+import { generateSriHash } from '@arponascension/express-inertia';
 
 const hash = await generateSriHash(assetContent);
 // sha384-abc123...
@@ -334,7 +334,7 @@ const hash = await generateSriHash(assetContent);
 Replace `console.warn` with a pluggable logger:
 
 ```ts
-import { createLogger, setGlobalLogger } from 'express-inertia';
+import { createLogger, setGlobalLogger } from '@arponascension/express-inertia';
 import pino from 'pino';
 
 setGlobalLogger(createLogger({ prefix: 'my-app', logger: pino() }));
@@ -343,7 +343,7 @@ setGlobalLogger(createLogger({ prefix: 'my-app', logger: pino() }));
 ### Request Correlation IDs
 
 ```ts
-import { requestIdMiddleware } from 'express-inertia';
+import { requestIdMiddleware } from '@arponascension/express-inertia';
 
 app.use(requestIdMiddleware());
 app.use(inertia());
@@ -379,7 +379,7 @@ app.engine('ejs', createInertiaEngine({
 Prevents cascade failures when the SSR endpoint is down:
 
 ```ts
-import { CircuitBreaker, resetAllCircuitBreakers } from 'express-inertia';
+import { CircuitBreaker, resetAllCircuitBreakers } from '@arponascension/express-inertia';
 
 const breaker = new CircuitBreaker({
   failureThreshold: 5,
@@ -391,7 +391,7 @@ const breaker = new CircuitBreaker({
 ### Retry with Exponential Backoff
 
 ```ts
-import { calculateBackoff } from 'express-inertia';
+import { calculateBackoff } from '@arponascension/express-inertia';
 
 const delay = calculateBackoff(attempt, 200, 2000);
 ```

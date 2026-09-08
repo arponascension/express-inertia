@@ -10,7 +10,7 @@ export interface LoggerOptions {
   logger?: Logger;
 }
 
-const DEFAULT_PREFIX = 'express-inertia';
+const DEFAULT_PREFIX = '@arponascension/express-inertia';
 
 function createConsoleLogger(prefix: string): Logger {
   const pad = (str: string) => str.padEnd(2, ' ');

@@ -1,6 +1,6 @@
 {
   "name": "@arponascension/express-inertia",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Next-generation Inertia.js adapter and middleware for Express with Blade-style EJS components, Vite integration, and SSR support",
   "homepage": "https://github.com/arponascension/express-inertia#readme",
   "repository": {

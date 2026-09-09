@@ -87,7 +87,7 @@ app.listen(3000, () => console.log('Server running on http://localhost:3000'));
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= page?.props?.title || 'App' %></title>
+    <title inertia><%= page?.props?.title || 'App' %></title>
 
     @inertiaHead
     @viteReactRefresh
@@ -286,7 +286,7 @@ app.use(
       enabled: true,
       render: async (page) => {
         return {
-          head: [`<title>${page.props.title}</title>`],
+          head: [`<title inertia>${page.props.title}</title>`],
           body: '<div id="app">...</div>',
         };
       },

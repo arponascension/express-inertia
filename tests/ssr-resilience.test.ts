@@ -24,7 +24,7 @@ describe('SSR Resilience', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ head: ['<title>SSR</title>'], body: '<div>SSR</div>' }),
+        json: () => Promise.resolve({ head: ['<title inertia>SSR</title>'], body: '<div>SSR</div>' }),
       });
     });
 

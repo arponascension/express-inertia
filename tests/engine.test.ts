@@ -179,7 +179,7 @@ describe('Blade Directives & Component Compiler', () => {
 
     const options = {
       page,
-      ssr: { head: ['<title>SSR</title>'], body: ssrBody },
+      ssr: { head: ['<title inertia>SSR</title>'], body: ssrBody },
     };
 
     const html = await new Promise<string>((resolve, reject) => {
@@ -189,7 +189,7 @@ describe('Blade Directives & Component Compiler', () => {
       });
     });
 
-    expect(html).toContain('<title>SSR</title>');
+    expect(html).toContain('<title inertia>SSR</title>');
     expect(html).toContain('data-server-rendered="true" id="app"><h1>Welcome</h1>');
     expect(html).toContain('<h1>Welcome</h1>');
     expect((html.match(/data-page="app"/g) || []).length).toBe(1);

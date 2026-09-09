@@ -24,7 +24,7 @@ describe('Inertia SSR Handler', () => {
   it('uses custom render function when provided', async () => {
     const customRender = async (page: Page) => {
       return {
-        head: ['<title>Custom SSR Title</title>', '<meta name="description" content="Test">'],
+        head: ['<title inertia>Custom SSR Title</title>', '<meta name="description" content="Test">'],
         body: `<div class="ssr-rendered">Rendered ${page.component}</div>`,
       };
     };
@@ -36,7 +36,7 @@ describe('Inertia SSR Handler', () => {
 
     expect(result).not.toBeNull();
     expect(result?.head).toEqual([
-      '<title>Custom SSR Title</title>',
+      '<title inertia>Custom SSR Title</title>',
       '<meta name="description" content="Test">',
     ]);
     expect(result?.body).toBe('<div class="ssr-rendered">Rendered Home</div>');

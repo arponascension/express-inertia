@@ -63,7 +63,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   inertia({
     rootView: 'base.ejs',
-    version: '0.1.1',
+    version: '0.1.2',
     shared: (req) => ({
       appName: 'My Express App',
       auth: { user: (req as any).user || null },

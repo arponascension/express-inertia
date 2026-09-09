@@ -1,6 +1,6 @@
 {
   "name": "@arponascension/express-inertia",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Next-generation Inertia.js adapter and middleware for Express with Blade-style EJS components, Vite integration, and SSR support",
   "homepage": "https://github.com/arponascension/express-inertia#readme",
   "repository": {
@@ -66,11 +66,14 @@
     "@types/express": "^4.17.21",
     "@types/node": "^22.0.0",
     "@types/supertest": "^6.0.2",
+    "@inertiajs/vue3": "^2.2.12",
+    "@vitejs/plugin-vue": "^5.2.3",
     "express": "^4.21.2",
     "supertest": "^7.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
     "vite": "^6.4.3",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "vue": "^3.5.13"
   }
 }

@@ -1,4 +1,4 @@
-# express-inertia 🚀
+# @arponascension/express-inertia 🚀
 
 [![npm version](https://img.shields.io/npm/v/@arponascension/express-inertia.svg)](https://npmjs.com/package/@arponascension/express-inertia)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,7 +27,8 @@
 ## 📦 Installation
 
 ```bash
-npm install @arponascension/express-inertia ejs
+npm install @arponascension/express-inertia ejs express @inertiajs/vue3 vue
+npm install -D vite @vitejs/plugin-vue
 ```
 
 Peer dependencies:
@@ -63,7 +64,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   inertia({
     rootView: 'base.ejs',
-    version: '0.1.2',
+    version: '1.0.0',
     shared: (req) => ({
       appName: 'My Express App',
       auth: { user: (req as any).user || null },
@@ -90,8 +91,7 @@ app.listen(3000, () => console.log('Server running on http://localhost:3000'));
     <title inertia><%= page?.props?.title || 'App' %></title>
 
     @inertiaHead
-    @viteReactRefresh
-    @vite('src/main.tsx')
+    @vite('src/main.ts')
   </head>
   <body>
     @inertia
@@ -99,6 +99,36 @@ app.listen(3000, () => console.log('Server running on http://localhost:3000'));
   </body>
 </html>
 ```
+
+### 3. Configure the Vue client (`src/main.ts`)
+
+```ts
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+
+createInertiaApp({
+  resolve: (name) => import(`./Pages/${name}.vue`),
+  setup({ el, App, props, plugin }) {
+    createApp({ render: () => h(App, props) }).use(plugin).mount(el);
+  },
+});
+```
+
+### 4. Configure Vite (`vite.config.ts`)
+
+```ts
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
+
+export default defineConfig({
+  plugins: [vue(), inertiaVitePlugin()],
+  base: '/build/',
+  build: { manifest: true, outDir: 'public/build' },
+});
+```
+
+Start Express and Vite in separate terminals during development; `inertiaVitePlugin()` writes `public/hot` so the EJS root view automatically uses the Vite dev server. Run `vite build` before production deployment to write `public/build/.vite/manifest.json`.
 
 ---
 
@@ -249,7 +279,7 @@ import { createPrefetchHelper } from '@arponascension/express-inertia';
 const prefetch = createPrefetchHelper(viteHelper);
 
 // In your base template:
-<%= prefetch.prefetch('src/Pages/Dashboard.tsx') %>
+<%= prefetch.prefetch('src/Pages/Dashboard.vue') %>
 // <link rel="prefetch" href="/build/assets/Dashboard.abc1234.js">
 
 <%= prefetch.preload('src/main.ts') %>
@@ -469,7 +499,18 @@ const delay = calculateBackoff(attempt, 200, 2000);
 npm test
 ```
 
-Run the full test suite with Vitest (89 tests across 14 suites).
+Run the full test suite with Vitest. The suite includes Vue/Inertia protocol integration coverage and a real Vite production-manifest build.
+
+## ✅ Compatibility
+
+The following versions are exercised by the integration suite. Test your application before upgrading a major version.
+
+| Dependency | Tested versions |
+|---|---|
+| Node.js | 25.8.x |
+| Express | 4.22.x |
+| `@inertiajs/core` | 2.3.27 |
+| Vue | 3.5.42 |
 
 ---
 

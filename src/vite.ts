@@ -61,9 +61,9 @@ function resolveDevServerUrl(config: any, override?: string): string {
  *
  * Use it in your `vite.config.ts`:
  * ```ts
- * import { inertiaVitePlugin } from 'express-inertia/vite';
+ * import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
  * export default defineConfig({
- *   plugins: [react(), inertiaVitePlugin()],
+ *   plugins: [inertiaVitePlugin()],
  * });
  * ```
  */

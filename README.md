@@ -27,8 +27,15 @@
 ## 📦 Installation
 
 ```bash
-npm install @arponascension/express-inertia ejs express @inertiajs/vue3 vue
+npm install @arponascension/express-inertia ejs express
+
+# Choose one client adapter:
+npm install @inertiajs/vue3 vue
 npm install -D vite @vitejs/plugin-vue
+
+# Or use React:
+npm install @inertiajs/react react react-dom
+npm install -D vite @vitejs/plugin-react
 ```
 
 Peer dependencies:
@@ -114,7 +121,28 @@ createInertiaApp({
 });
 ```
 
-### 4. Configure Vite (`vite.config.ts`)
+### 4. Configure the React client (`src/main.tsx`) (alternative)
+
+```tsx
+import { createRoot } from 'react-dom/client';
+import { createInertiaApp } from '@inertiajs/react';
+
+createInertiaApp({
+  resolve: (name) => import(`./Pages/${name}.tsx`),
+  setup({ el, App, props }) {
+    createRoot(el).render(<App {...props} />);
+  },
+});
+```
+
+For React, use a `.tsx` entrypoint in the root view and include `@viteReactRefresh` before `@vite`:
+
+```html
+@viteReactRefresh
+@vite('src/main.tsx')
+```
+
+### 5. Configure Vite for Vue (`vite.config.ts`)
 
 ```ts
 import { defineConfig } from 'vite';
@@ -123,6 +151,20 @@ import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
 
 export default defineConfig({
   plugins: [vue(), inertiaVitePlugin()],
+  base: '/build/',
+  build: { manifest: true, outDir: 'public/build' },
+});
+```
+
+For React, replace the Vue plugin with `@vitejs/plugin-react` and keep the same `inertiaVitePlugin()`:
+
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
+
+export default defineConfig({
+  plugins: [react(), inertiaVitePlugin()],
   base: '/build/',
   build: { manifest: true, outDir: 'public/build' },
 });

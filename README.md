@@ -47,7 +47,7 @@ It ships with a **Blade-style EJS template engine**, **zero-config Vite** integr
 
 Inertia requests return plain JSON to the client (no full page reloads); real full-page visits return your server-rendered HTML template. Page components, props, versions, and partial reloads are all handled automatically by the Inertia protocol.
 
-**express-inertia** is the Inertia.js server-side adapter for **Express.js** / **Node.js** — the Node equivalent of the official [Laravel adapter](https://inertiajs.com/docs/seeding-data) and [Raill adapter](https://inertiajs.com/docs/rails/getting-started). The client side stays 100% compatible with the official `@inertiajs/vue3`, `@inertiajs/react`, and `@inertiajs/svelte` packages.
+**express-inertia** is the Inertia.js server-side adapter for **Express.js** / **Node.js** — the Node equivalent of the official [Laravel](https://inertiajs.com/docs/getting-started) and [Rails](https://github.com/inertiajs/inertia-rails) adapters. The client side stays 100% compatible with the official `@inertiajs/vue3`, `@inertiajs/react`, and `@inertiajs/svelte` packages.
 
 ## Why use Inertia.js with Express?
 
@@ -674,7 +674,7 @@ npm run test:coverage # Coverage report (v8)
 - [CHANGELOG.md](./CHANGELOG.md) — release notes
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — how to contribute
 
-Looking for Inertia.js on another framework? Official adapters exist for [Laravel](https://inertiajs.com/docs/getting-started), and community adapters cover Fastify, Hono, and Rails.
+Looking for Inertia.js on another framework? Official adapters exist for [Laravel](https://inertiajs.com/docs/getting-started) and [Rails](https://github.com/inertiajs/inertia-rails), and community adapters cover Fastify, Hono, and more.
 
 ---
 

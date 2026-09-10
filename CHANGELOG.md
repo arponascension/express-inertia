@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-09-10
+
+### Changed
+
+- Shortened the npm `description` to fit the registry's 200-character limit
+  (the previous value was truncated mid-word in the registry metadata).
+- Fixed the tutorial "Raill" → "Rails" typo and corrected the linked Inertia.js
+  Laravel/Rails adapter references in the README.
+
 ## [1.5.0] - 2026-09-10
 
 ### Added

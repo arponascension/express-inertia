@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import type { InertiaOptions, InertiaRequestHelper, PageProps, SecurityOptions } from './types.js';
+import type { InertiaOptions, PageProps, SecurityOptions } from './types.js';
 import { createInertiaResponse } from './response.js';
-import { validateComponentName, DEFAULT_COMPONENT_NAME_PATTERN } from './utils.js';
+import { DEFAULT_COMPONENT_NAME_PATTERN, DEFAULT_SECURITY_OPTIONS } from './utils.js';
 
 /**
  * Creates the Inertia Express middleware.
@@ -60,11 +61,11 @@ export function createInertia(options: InertiaOptions = {}): RequestHandler {
       res.inertia = createInertiaResponse(req, res, options, { ...globalShared });
 
       // Validate component names on Inertia requests to prevent path traversal
-      const securityOptions: SecurityOptions = options.security ?? { validateComponentNames: true };
+      const securityOptions: SecurityOptions = options.security ?? DEFAULT_SECURITY_OPTIONS;
       if (securityOptions.validateComponentNames !== false && isInertia) {
         const pattern = securityOptions.componentNamePattern ?? DEFAULT_COMPONENT_NAME_PATTERN;
-        const partialComponent = req.header('X-Inertia-Partial-Component');
-        if (partialComponent && !pattern.test(partialComponent)) {
+        const requestedPartialComponent = req.header('X-Inertia-Partial-Component');
+        if (requestedPartialComponent && !pattern.test(requestedPartialComponent)) {
           res.setHeader('X-Inertia-Location', req.originalUrl || req.url);
           res.status(409).end();
           return;
@@ -72,8 +73,10 @@ export function createInertia(options: InertiaOptions = {}): RequestHandler {
       }
 
       // Asset Version Check:
-      // On GET requests from Inertia client with version mismatch, return 409 Conflict
-      if (isInertia && req.method === 'GET' && options.version) {
+      // On Inertia requests with version mismatch, return 409 Conflict so the
+      // client performs a full page reload (applies to all HTTP methods per the
+      // Inertia protocol, not just GET).
+      if (isInertia && options.version) {
         let currentVersion: string | null = null;
         if (typeof options.version === 'function') {
           currentVersion = await options.version();
@@ -123,13 +126,11 @@ export default createInertia;
  */
 export function requestIdMiddleware(): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
-    (req as any).id = req.header('X-Request-ID') || generateRequestId();
+    req.id = req.header('X-Request-ID') || generateRequestId();
     next();
   };
 }
 
 function generateRequestId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).slice(2, 8);
-  return `${timestamp}-${random}`;
+  return randomUUID();
 }

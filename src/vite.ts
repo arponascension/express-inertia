@@ -69,6 +69,8 @@ function resolveDevServerUrl(config: any, override?: string): string {
  */
 export function inertiaVitePlugin(options: InertiaVitePluginOptions = {}): InertiaVitePlugin {
   const logger = createLogger({ prefix: 'express-inertia:vite' });
+  let cleanupRegistered = false;
+  let exitConfig: any = null;
   const write = (config: any, server?: any) => {
     try {
       const hotFile = path.resolve(config.root, options.hotFile || 'public/hot');
@@ -90,6 +92,12 @@ export function inertiaVitePlugin(options: InertiaVitePluginOptions = {}): Inert
     }
   };
 
+  const removeOnExit = () => {
+    if (exitConfig) {
+      remove(exitConfig);
+    }
+  };
+
   return {
     name: 'express-inertia-hot-file',
 
@@ -103,9 +111,13 @@ export function inertiaVitePlugin(options: InertiaVitePluginOptions = {}): Inert
 
     configureServer(server) {
       write(server.config, server);
+      exitConfig = server.config;
       server.httpServer?.once('listening', () => write(server.config, server));
       server.httpServer?.on('close', () => remove(server.config));
-      process.once('exit', () => remove(server.config));
+      if (!cleanupRegistered) {
+        process.once('exit', removeOnExit);
+        cleanupRegistered = true;
+      }
     },
 
     buildStart() {
@@ -135,7 +147,7 @@ export interface ResolvedViteConfig {
   manifestPath: string;
   base: string;
   manifest: ViteManifest | null;
-  isDev: boolean;
+  isDev: boolean | undefined;
   devServerUrlOverride: string | null;
 }
 
@@ -158,7 +170,7 @@ export class ViteHelper {
       ),
       base: config?.base || `/${buildDir}/`,
       manifest: config?.manifest || null,
-      isDev: config?.isDev ?? false,
+      isDev: config?.isDev,
       devServerUrlOverride: config?.devServerUrlOverride || null,
     };
   }
@@ -171,8 +183,8 @@ export class ViteHelper {
    * NODE_ENV switch is required to toggle between dev and build assets.
    */
   public isDev(): boolean {
-    if (this.config.isDev === true) {
-      return true;
+    if (this.config.isDev !== undefined) {
+      return this.config.isDev;
     }
 
     const candidatePaths = [
@@ -212,6 +224,13 @@ export class ViteHelper {
     }
 
     return this.config.devServerUrl;
+  }
+
+  /**
+   * Get the production asset base path (always ends with a trailing slash).
+   */
+  public getBasePath(): string {
+    return this.config.base.endsWith('/') ? this.config.base : `${this.config.base}/`;
   }
 
   /**
@@ -257,8 +276,10 @@ export class ViteHelper {
           const parsed = JSON.parse(raw);
           this.manifestCache = parsed;
           return parsed;
-        } catch (err: any) {
-          throw new Error(`[express-inertia] Failed to parse Vite manifest at ${p}: ${err.message}`);
+        } catch (err: unknown) {
+          throw new Error(
+            `[express-inertia] Failed to parse Vite manifest at ${p}: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       }
     }

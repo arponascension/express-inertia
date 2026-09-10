@@ -24,6 +24,7 @@ export {
 export {
   compileBladeDirectives,
   registerDirective,
+  clearCustomDirectives,
 } from './directives.js';
 
 export {
@@ -45,6 +46,7 @@ export {
   sanitizeViewData,
   generateSriHash,
   DEFAULT_COMPONENT_NAME_PATTERN,
+  DEFAULT_SECURITY_OPTIONS,
 } from './utils.js';
 
 export {

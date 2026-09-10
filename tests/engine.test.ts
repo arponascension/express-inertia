@@ -1,7 +1,7 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, vi, afterAll, beforeEach, afterEach } from 'vitest';
 import { compileBladeDirectives, registerDirective } from '../src/directives.js';
-import { createInertiaEngine } from '../src/engine.js';
-import type { BladeEngineOptions } from '../src/types.js';
+import { createInertiaEngine, clearEngineCache } from '../src/engine.js';
+import type { BladeEngineOptions, Page } from '../src/types.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -194,5 +194,116 @@ describe('Blade Directives & Component Compiler', () => {
     expect(html).toContain('<h1>Welcome</h1>');
     expect((html.match(/data-page="app"/g) || []).length).toBe(1);
     expect(html).not.toContain('<div id="app"><script data-page=');
+  });
+});
+
+describe('Engine caching and edge runtime', () => {
+  const cacheDir = path.join(__dirname, 'temp_engine_cache');
+  const viewPath = path.join(cacheDir, 'view.ejs');
+
+  beforeEach(() => {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+  });
+
+  function renderWith(
+    engine: (file: string, opts: Record<string, any>, cb: (e: Error | null, html?: string) => void) => void,
+    options: Record<string, any> = {}
+  ): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      engine(viewPath, options, (err, html) => {
+        if (err) return reject(err);
+        resolve(html || '');
+      });
+    });
+  }
+
+  function mockPage(): Page {
+    return {
+      component: 'Home',
+      props: { title: 'Welcome' },
+      url: '/',
+      version: '1.0',
+    };
+  }
+
+  it('uses templateSource without touching the filesystem (edge runtimes)', async () => {
+    const engine = createInertiaEngine({
+      cache: false,
+      templateSource: '<div>EDGE<%- inertia() %></div>',
+    });
+
+    const html = await new Promise<string>((resolve, reject) => {
+      engine('/nonexistent/path.ejs', { page: mockPage() }, (err, res) => {
+        if (err) return reject(err);
+        resolve(res || '');
+      });
+    });
+
+    expect(html).toContain('EDGE');
+    expect(html).toContain('<div id="app">');
+  });
+
+  it('caches compiled templates when cache is enabled', async () => {
+    fs.writeFileSync(viewPath, '<h1>version-one</h1>');
+    const engine = createInertiaEngine({ cache: true });
+
+    expect(await renderWith(engine)).toContain('version-one');
+
+    // Template file changes, but the cached engine keeps returning the old content.
+    fs.writeFileSync(viewPath, '<h1>version-two</h1>');
+    expect(await renderWith(engine)).toContain('version-one');
+  });
+
+  it('does not cache templates when cache is disabled', async () => {
+    fs.writeFileSync(viewPath, '<h1>version-one</h1>');
+    const engine = createInertiaEngine({ cache: false });
+
+    expect(await renderWith(engine)).toContain('version-one');
+
+    fs.writeFileSync(viewPath, '<h1>version-two</h1>');
+    expect(await renderWith(engine)).toContain('version-two');
+  });
+
+  it('clearEngineCache() forces cached templates to be re-read', async () => {
+    fs.writeFileSync(viewPath, '<h1>version-one</h1>');
+    const engine = createInertiaEngine({ cache: true });
+
+    expect(await renderWith(engine)).toContain('version-one');
+
+    fs.writeFileSync(viewPath, '<h1>version-two</h1>');
+    clearEngineCache();
+    expect(await renderWith(engine)).toContain('version-two');
+  });
+
+  it('reads and compiles a cached template only once', async () => {
+    fs.writeFileSync(viewPath, '<h1>once</h1>');
+    const engine = createInertiaEngine({ cache: true });
+
+    const readSpy = vi.spyOn(fs, 'readFileSync');
+    try {
+      expect(await renderWith(engine)).toContain('once');
+      expect(await renderWith(engine)).toContain('once');
+      expect(readSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      readSpy.mockRestore();
+    }
+  });
+
+  it('reuses the compiled template in dev mode without re-reading unchanged files', async () => {
+    fs.writeFileSync(viewPath, '<h1>stable-content</h1>');
+    const engine = createInertiaEngine({ cache: false });
+
+    const readSpy = vi.spyOn(fs, 'readFileSync');
+    try {
+      expect(await renderWith(engine)).toContain('stable-content');
+      expect(await renderWith(engine)).toContain('stable-content');
+      expect(readSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      readSpy.mockRestore();
+    }
   });
 });

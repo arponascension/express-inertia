@@ -127,6 +127,17 @@ describe('Vite Integration Helper', () => {
     expect(tags).toContain('<script type="module" src="http://localhost:5173/src/main.ts"></script>');
     expect(tags).not.toContain('/build/assets/main.js');
   });
+
+  it('honours an explicit isDev flag over an existing hot file', () => {
+    fs.writeFileSync(path.join(publicDir, 'hot'), 'http://localhost:5173\n');
+
+    const helper = createViteHelper({
+      publicDir,
+      isDev: false,
+    });
+
+    expect(helper.isDev()).toBe(false);
+  });
 });
 
 describe('inertiaVitePlugin', () => {
@@ -170,6 +181,39 @@ describe('inertiaVitePlugin', () => {
     const plugin = inertiaVitePlugin({ hotFile: 'public/hot' });
     plugin.configResolved?.({ command: 'build', root, server: {} });
 
+    expect(fs.existsSync(hotFile)).toBe(false);
+  });
+
+  it('configureServer writes the hot file and reacts to listening/close events', () => {
+    let listeningCb: () => void = () => {};
+    let closeCb: () => void = () => {};
+    const httpServer = {
+      once: (_event: string, cb: () => void) => {
+        listeningCb = cb;
+      },
+      on: (event: string, cb: () => void) => {
+        if (event === 'close') closeCb = cb;
+      },
+    };
+
+    const server = {
+      config: { root, server: { port: 3000, host: 'localhost', https: false } },
+      resolvedUrls: { local: ['http://127.0.0.1:3000'] },
+      httpServer,
+    };
+
+    const plugin = inertiaVitePlugin({ hotFile: 'public/hot' });
+    plugin.configureServer?.(server as any);
+
+    expect(fs.existsSync(hotFile)).toBe(true);
+    expect(fs.readFileSync(hotFile, 'utf-8')).toBe('http://127.0.0.1:3000');
+
+    // Simulate the dev server actually listening (rewrites the hot file).
+    listeningCb();
+    expect(fs.readFileSync(hotFile, 'utf-8')).toBe('http://127.0.0.1:3000');
+
+    // Simulate the dev server shutting down (removes the hot file).
+    closeCb();
     expect(fs.existsSync(hotFile)).toBe(false);
   });
 });

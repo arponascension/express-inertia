@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createPrefetchHelper, PrefetchHelper } from '../src/prefetch.js';
+import { createPrefetchHelper } from '../src/prefetch.js';
 import { createViteHelper } from '../src/vite.js';
 import fs from 'fs';
 import path from 'path';
@@ -42,6 +42,7 @@ describe('Prefetch Helper', () => {
 
     expect(tags).toContain('rel="prefetch"');
     expect(tags).toContain('href="http://localhost:5173/src/main.ts"');
+    expect(tags).not.toContain('crossorigin');
   });
 
   it('generates preload tags when mode is preload', () => {

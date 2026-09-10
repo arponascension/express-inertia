@@ -9,7 +9,13 @@ import type {
 } from './types.js';
 import { resolveProps } from './utils.js';
 import { renderSSR } from './ssr.js';
-import { validateComponentName, DEFAULT_COMPONENT_NAME_PATTERN, sanitizeViewData, safeStringify } from './utils.js';
+import {
+  validateComponentName,
+  DEFAULT_COMPONENT_NAME_PATTERN,
+  DEFAULT_SECURITY_OPTIONS,
+  sanitizeViewData,
+  safeStringify,
+} from './utils.js';
 
 export function createInertiaResponse(
   req: Request,
@@ -41,7 +47,7 @@ export function createInertiaResponse(
     viewData: Record<string, any> = {}
   ): Promise<void> => {
     // 0. Validate component name to prevent path traversal
-    const securityOptions: SecurityOptions = options.security ?? { validateComponentNames: true };
+    const securityOptions: SecurityOptions = options.security ?? DEFAULT_SECURITY_OPTIONS;
     if (securityOptions.validateComponentNames !== false) {
       const pattern = securityOptions.componentNamePattern ?? DEFAULT_COMPONENT_NAME_PATTERN;
       validateComponentName(component, pattern);
@@ -124,12 +130,9 @@ export function createInertiaResponse(
       globalViewData = options.viewData;
     }
 
-    const sanitizedViewData = securityOptions.validateComponentNames !== false
-      ? sanitizeViewData(viewData)
-      : viewData;
-    const sanitizedGlobalViewData = securityOptions.validateComponentNames !== false
-      ? sanitizeViewData(globalViewData)
-      : globalViewData;
+    const shouldSanitizeViewData = securityOptions.sanitizeViewData !== false;
+    const sanitizedViewData = shouldSanitizeViewData ? sanitizeViewData(viewData) : viewData;
+    const sanitizedGlobalViewData = shouldSanitizeViewData ? sanitizeViewData(globalViewData) : globalViewData;
 
     const templateData = {
       ...res.locals,

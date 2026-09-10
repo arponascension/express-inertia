@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderSSR, resetAllCircuitBreakers } from '../src/ssr.js';
 import type { Page } from '../src/types.js';
 
@@ -10,9 +10,15 @@ const mockPage: Page = {
 };
 
 describe('SSR Resilience', () => {
+  const originalFetch = global.fetch;
+
   beforeEach(() => {
     resetAllCircuitBreakers();
     vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('retries on transient failures', async () => {
@@ -111,5 +117,51 @@ describe('SSR Resilience', () => {
         retry: { maxRetries: 0 },
       })
     ).rejects.toThrow('Render crash');
+  });
+
+  it('aborts and falls back to client rendering when the SSR server exceeds the timeout', async () => {
+    const mockFetch = vi.fn((_url: string, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          const error = new Error('The operation was aborted, timed out.') as Error & { name: string };
+          error.name = 'AbortError';
+          reject(error);
+        });
+      })
+    );
+    global.fetch = mockFetch as any;
+
+    const result = await renderSSR(mockPage, {
+      enabled: true,
+      url: 'http://localhost:13714/render',
+      timeout: 50,
+      retry: { maxRetries: 0, baseDelayMs: 5, maxDelayMs: 20 },
+    });
+
+    expect(result).toBeNull();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws instead of falling back when a timeout occurs and fallback is false', async () => {
+    const mockFetch = vi.fn((_url: string, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          const error = new Error('The operation was aborted, timed out.') as Error & { name: string };
+          error.name = 'AbortError';
+          reject(error);
+        });
+      })
+    );
+    global.fetch = mockFetch as any;
+
+    await expect(
+      renderSSR(mockPage, {
+        enabled: true,
+        url: 'http://localhost:13714/render',
+        timeout: 50,
+        fallback: false,
+        retry: { maxRetries: 0, baseDelayMs: 5, maxDelayMs: 20 },
+      })
+    ).rejects.toThrow();
   });
 });

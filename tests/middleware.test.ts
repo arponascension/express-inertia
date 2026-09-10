@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
+import type { ErrorRequestHandler } from 'express';
 import { inertia } from '../src/index.js';
 import { createInertiaEngine } from '../src/engine.js';
 import path from 'path';
@@ -64,7 +65,7 @@ describe('express-inertia Middleware', () => {
     app.use(
       inertia({
         version: '1.0.0',
-        shared: (req) => ({ authUser: 'Bob' }),
+        shared: (_req) => ({ authUser: 'Bob' }),
       })
     );
 
@@ -106,6 +107,26 @@ describe('express-inertia Middleware', () => {
 
     const res = await request(app)
       .get('/dashboard')
+      .set('X-Inertia', 'true')
+      .set('X-Inertia-Version', '1.0.0');
+
+    expect(res.status).toBe(409);
+    expect(res.headers['x-inertia-location']).toBe('/dashboard');
+  });
+
+  it('responds with 409 Conflict on version mismatch for non-GET methods', async () => {
+    app.use(
+      inertia({
+        version: '2.0.0',
+      })
+    );
+
+    app.post('/dashboard', (req, res) => {
+      res.inertia('Dashboard');
+    });
+
+    const res = await request(app)
+      .post('/dashboard')
       .set('X-Inertia', 'true')
       .set('X-Inertia-Version', '1.0.0');
 
@@ -272,5 +293,221 @@ describe('express-inertia Middleware', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.component).toBe('../../../etc/passwd');
+  });
+
+  it('still sanitizes viewData when only component name validation is disabled', async () => {
+    const localApp = express();
+    const viewDataTemplate = '<%= title %>|<%= typeof fn %>';
+    localApp.engine(
+      'ejs',
+      createInertiaEngine({ cache: false, templateSource: viewDataTemplate })
+    );
+    localApp.set('view engine', 'ejs');
+    localApp.set('views', path.join(__dirname, 'views'));
+
+    localApp.use(
+      inertia({
+        rootView: 'app.ejs',
+        security: { validateComponentNames: false },
+      })
+    );
+
+    localApp.get('/viewdata', (req, res) => {
+      res.inertia('ViewData', {}, { title: 'Hello', fn: () => 'secret' });
+    });
+
+    const res = await request(localApp).get('/viewdata');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Hello|undefined');
+  });
+
+  it('preserves viewData functions when sanitizeViewData is disabled', async () => {
+    const localApp = express();
+    const viewDataTemplate = '<%= title %>|<%= typeof fn %>';
+    localApp.engine(
+      'ejs',
+      createInertiaEngine({ cache: false, templateSource: viewDataTemplate })
+    );
+    localApp.set('view engine', 'ejs');
+    localApp.set('views', path.join(__dirname, 'views'));
+
+    localApp.use(
+      inertia({
+        rootView: 'app.ejs',
+        security: { validateComponentNames: true, sanitizeViewData: false },
+      })
+    );
+
+    localApp.get('/viewdata', (req, res) => {
+      res.inertia('ViewData', {}, { title: 'Hello', fn: () => 'secret' });
+    });
+
+    const res = await request(localApp).get('/viewdata');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Hello|function');
+  });
+
+  it('supports version as a synchronous function', async () => {
+    app.use(
+      inertia({
+        version: () => '2.0.0',
+      })
+    );
+
+    app.get('/versioned', (req, res) => {
+      res.inertia('Home');
+    });
+
+    const okRes = await request(app)
+      .get('/versioned')
+      .set('X-Inertia', 'true')
+      .set('X-Inertia-Version', '2.0.0');
+    expect(okRes.status).toBe(200);
+    expect(okRes.body.version).toBe('2.0.0');
+
+    const conflictRes = await request(app)
+      .get('/versioned')
+      .set('X-Inertia', 'true')
+      .set('X-Inertia-Version', '1.0.0');
+    expect(conflictRes.status).toBe(409);
+    expect(conflictRes.headers['x-inertia-location']).toBe('/versioned');
+  });
+
+  it('supports version as an async function', async () => {
+    app.use(
+      inertia({
+        version: async () => '2.0.0',
+      })
+    );
+
+    app.get('/versioned', (req, res) => {
+      res.inertia('Home');
+    });
+
+    const res = await request(app)
+      .get('/versioned')
+      .set('X-Inertia', 'true')
+      .set('X-Inertia-Version', '2.0.0');
+
+    expect(res.status).toBe(200);
+    expect(res.body.version).toBe('2.0.0');
+  });
+
+  it('supports res.inertia.version() per-request override', async () => {
+    app.use(
+      inertia({
+        version: 'original',
+      })
+    );
+
+    app.get('/ver', (req, res) => {
+      res.inertia.version('override');
+      res.inertia('Home');
+    });
+
+    const res = await request(app)
+      .get('/ver')
+      .set('X-Inertia', 'true');
+
+    expect(res.status).toBe(200);
+    expect(res.body.version).toBe('override');
+  });
+
+  it('supports res.inertia.rootView() per-request override', async () => {
+    app.use(
+      inertia({
+        rootView: 'app.ejs',
+      })
+    );
+
+    app.get('/custom-view', (req, res) => {
+      res.inertia.rootView('custom.ejs');
+      res.inertia('Home');
+    });
+
+    const res = await request(app).get('/custom-view');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('CUSTOM_ROOT_VIEW');
+    expect(res.text).not.toContain('Test App');
+  });
+
+  it('passes options.viewData as an object to the template', async () => {
+    const localApp = express();
+    localApp.engine(
+      'ejs',
+      createInertiaEngine({ cache: false, templateSource: '<h1><%= siteName %></h1>' })
+    );
+    localApp.set('view engine', 'ejs');
+    localApp.set('views', path.join(__dirname, 'views'));
+
+    localApp.use(
+      inertia({
+        rootView: 'app.ejs',
+        viewData: { siteName: 'MySite' },
+      })
+    );
+
+    localApp.get('/', (req, res) => {
+      res.inertia('Home');
+    });
+
+    const res = await request(localApp).get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<h1>MySite</h1>');
+  });
+
+  it('passes options.viewData as a function to the template', async () => {
+    const localApp = express();
+    localApp.engine(
+      'ejs',
+      createInertiaEngine({ cache: false, templateSource: '<h1><%= siteName %></h1>' })
+    );
+    localApp.set('view engine', 'ejs');
+    localApp.set('views', path.join(__dirname, 'views'));
+
+    localApp.use(
+      inertia({
+        rootView: 'app.ejs',
+        viewData: (req) => ({ siteName: `Site:${req.header('X-Site')}` }),
+      })
+    );
+
+    localApp.get('/', (req, res) => {
+      res.inertia('Home');
+    });
+
+    const res = await request(localApp).get('/').set('X-Site', 'Zed');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<h1>Site:Zed</h1>');
+  });
+
+  it('propagates middleware errors via next(err)', async () => {
+    const localApp = express();
+    localApp.engine('ejs', createInertiaEngine({ cache: false }));
+    localApp.set('view engine', 'ejs');
+    localApp.set('views', path.join(__dirname, 'views'));
+
+    localApp.use(
+      inertia({
+        version: () => {
+          throw new Error('version boom');
+        },
+      })
+    );
+
+    localApp.get('/error-path', (req, res) => {
+      res.inertia('Home');
+    });
+
+    const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    };
+    localApp.use(errorHandler);
+
+    const res = await request(localApp).get('/error-path').set('X-Inertia', 'true');
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('version boom');
   });
 });

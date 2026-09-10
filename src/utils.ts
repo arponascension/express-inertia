@@ -234,6 +234,15 @@ export function safeStringify(obj: any): string {
 export const DEFAULT_COMPONENT_NAME_PATTERN = /^[\w-]+(?:\/[\w-]+)*$/;
 
 /**
+ * Default security settings. Component name validation and view data
+ * sanitization are both enabled by default and can be toggled independently.
+ */
+export const DEFAULT_SECURITY_OPTIONS: SecurityOptions = {
+  validateComponentNames: true,
+  sanitizeViewData: true,
+};
+
+/**
  * Validates a component name to prevent path traversal and injection attacks.
  * Throws a TypeError if the name contains suspicious characters.
  */
@@ -286,12 +295,19 @@ export function sanitizeViewData(data: Record<string, any>): Record<string, any>
   return sanitize(data) as Record<string, any>;
 }
 
+let cryptoModule: typeof import('node:crypto') | undefined;
+
+async function getCrypto(): Promise<typeof import('node:crypto')> {
+  cryptoModule ??= await import('node:crypto');
+  return cryptoModule;
+}
+
 /**
  * Generates a Subresource Integrity (SRI) hash for a given string.
  * Returns the base64-encoded SHA-384 hash prefixed with 'sha384-'.
  */
 export async function generateSriHash(content: string | Buffer): Promise<string> {
-  const crypto = await import('node:crypto');
+  const crypto = await getCrypto();
   const hash = crypto.createHash('sha384').update(content);
   return `sha384-${hash.digest('base64')}`;
 }

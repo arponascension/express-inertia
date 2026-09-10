@@ -5,6 +5,7 @@ import {
   shouldRetry,
   calculateBackoff,
   DEFAULT_CIRCUIT_OPTIONS,
+  DEFAULT_RETRY_OPTIONS,
   type CircuitBreakerOptions,
   type RetryOptions,
   type SSRResilienceOptions,
@@ -12,19 +13,26 @@ import {
 
 const DEFAULT_SSR_URL = 'http://127.0.0.1:13714/render';
 const DEFAULT_TIMEOUT = 2000;
+const MAX_CIRCUIT_BREAKERS = 100;
 const logger = createLogger({ prefix: 'express-inertia:ssr' });
-
-const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
-  maxRetries: 2,
-  baseDelayMs: 200,
-  maxDelayMs: 2000,
-  retryableStatusCodes: [408, 429, 500, 502, 503, 504],
-};
 
 const circuitBreakers = new Map<string, CircuitBreaker>();
 
+function serializeCircuitOptions(options?: Partial<CircuitBreakerOptions>): string {
+  if (!options) return '';
+  const ordered = Object.keys(options)
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = (options as Record<string, unknown>)[key];
+      return acc;
+    }, {} as Record<string, unknown>);
+  return JSON.stringify(ordered);
+}
+
 function getCircuitBreaker(endpoint: string, options?: Partial<SSRResilienceOptions>): CircuitBreaker {
-  const key = options?.circuitBreaker ? `${endpoint}:${JSON.stringify(options.circuitBreaker)}` : endpoint;
+  const key = options?.circuitBreaker
+    ? `${endpoint}:${serializeCircuitOptions(options.circuitBreaker)}`
+    : endpoint;
   let breaker = circuitBreakers.get(key);
   if (!breaker) {
     const cbOptions: Required<CircuitBreakerOptions> = {
@@ -32,6 +40,12 @@ function getCircuitBreaker(endpoint: string, options?: Partial<SSRResilienceOpti
       ...options?.circuitBreaker,
     };
     breaker = new CircuitBreaker(cbOptions);
+    if (circuitBreakers.size >= MAX_CIRCUIT_BREAKERS) {
+      const oldest = circuitBreakers.keys().next().value;
+      if (oldest !== undefined) {
+        circuitBreakers.delete(oldest);
+      }
+    }
     circuitBreakers.set(key, breaker);
   }
   return breaker;
@@ -121,31 +135,34 @@ async function renderHttpSSR(
   let pageJson: string;
   try {
     pageJson = JSON.stringify(page);
-  } catch (err: any) {
-    throw new Error(`Failed to serialize page for SSR: ${err.message}`);
+  } catch (err: unknown) {
+    clearTimeout(timer);
+    throw new Error(`Failed to serialize page for SSR: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: pageJson,
-    signal: controller.signal,
-  });
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: pageJson,
+      signal: controller.signal,
+    });
 
-  clearTimeout(timer);
+    if (!response.ok) {
+      throw new Error(`SSR server responded with status: ${response.status} ${response.statusText}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`SSR server responded with status: ${response.status} ${response.statusText}`);
+    const data = (await response.json()) as SSRResult;
+    return {
+      head: Array.isArray(data.head) ? data.head : [],
+      body: typeof data.body === 'string' ? data.body : '',
+    };
+  } finally {
+    clearTimeout(timer);
   }
-
-  const data = (await response.json()) as SSRResult;
-  return {
-    head: Array.isArray(data.head) ? data.head : [],
-    body: typeof data.body === 'string' ? data.body : '',
-  };
 }
 
 async function renderWithRetry<T>(
@@ -158,19 +175,19 @@ async function renderWithRetry<T>(
     ...retryOptions,
   };
 
-  let lastError: any;
+  let lastError: unknown;
 
   for (let attempt = 0; attempt <= options.maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (err: any) {
+    } catch (err: unknown) {
       lastError = err;
 
       if (attempt >= options.maxRetries) {
         break;
       }
 
-      const statusCode = err.status || err.response?.status;
+      const statusCode = (err as any).status || (err as any).response?.status;
       if (!shouldRetry(err, statusCode, options.retryableStatusCodes)) {
         break;
       }
@@ -180,7 +197,7 @@ async function renderWithRetry<T>(
         attempt: attempt + 1,
         maxRetries: options.maxRetries,
         delayMs: Math.round(delay),
-        error: err.message,
+        error: err instanceof Error ? err.message : String(err),
         component: context,
       });
 
@@ -188,5 +205,8 @@ async function renderWithRetry<T>(
     }
   }
 
+  if (lastError === undefined) {
+    throw new Error('SSR renderWithRetry: no attempts executed');
+  }
   throw lastError;
 }

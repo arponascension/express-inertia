@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { inertia, createInertiaEngine, createViteHelper } from '../src/index.js';
+import { inertia, createInertiaEngine } from '../src/index.js';
 import path from 'path';
 import fs from 'fs';
 

@@ -88,10 +88,6 @@ describe('Form Helpers', () => {
       .post('/chain')
       .set('X-Inertia', 'true');
 
-    if (res.status !== 200) {
-      console.log('Chain test response:', res.status, res.text);
-    }
-
     expect(res.status).toBe(200);
     expect(res.body).toBeDefined();
     expect(res.body.props).toBeDefined();

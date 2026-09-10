@@ -6,7 +6,13 @@ const customDirectives: Record<string, DirectiveHandler> = {};
  * Escape a string for safe interpolation inside a single-quoted JS string literal.
  */
 function escapeJsString(str: string): string {
-  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 /**
@@ -16,6 +22,16 @@ function escapeJsString(str: string): string {
  */
 export function registerDirective(name: string, handler: DirectiveHandler): void {
   customDirectives[name] = handler;
+}
+
+/**
+ * Remove all globally registered custom directives.
+ * Useful for tests and hot-reload scenarios that need an isolated registry.
+ */
+export function clearCustomDirectives(): void {
+  for (const name of Object.keys(customDirectives)) {
+    delete customDirectives[name];
+  }
 }
 
 /**

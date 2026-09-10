@@ -1,10 +1,9 @@
 import fs from 'fs';
-import path from 'path';
 import ejs from 'ejs';
 import type { BladeEngineOptions, Page, SSRResult } from './types.js';
 import { compileBladeDirectives } from './directives.js';
 import { createViteHelper, ViteHelper } from './vite.js';
-import { serializePage } from './utils.js';
+import { serializePage, escapeHtmlAttr } from './utils.js';
 
 export interface TemplateLocals extends Record<string, any> {
   page?: Page;
@@ -18,6 +17,9 @@ export interface TemplateLocals extends Record<string, any> {
  * Registry of all engine instance caches for bulk clearing.
  */
 const engineCaches: Set<Map<string, ejs.TemplateFunction>> = new Set();
+const engineTimestamps: Set<Map<string, number>> = new Set();
+
+const TEMPLATE_SOURCE_KEY = '__express_inertia_template_source__';
 
 /**
  * Creates an Express view engine with Blade directive support and built-in Inertia/Vite helpers.
@@ -30,7 +32,9 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
   const defaultRootElement = options?.rootElement ?? true;
 
   const templateCache = new Map<string, ejs.TemplateFunction>();
+  const templateTimestamps = new Map<string, number>();
   engineCaches.add(templateCache);
+  engineTimestamps.add(templateTimestamps);
 
   return function inertiaBladeEngine(
     filePath: string,
@@ -38,22 +42,43 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
     callback: (err: Error | null, html?: string) => void
   ) {
     try {
-      let compiledTemplate = shouldCache ? templateCache.get(filePath) : undefined;
+      const template = options?.templateSource;
+      const hasTemplateSource = template !== undefined;
+      const cacheKey = hasTemplateSource ? TEMPLATE_SOURCE_KEY : filePath;
+
+      let compiledTemplate: ejs.TemplateFunction | undefined;
+      let templateMtimeMs = -1;
+
+      if (hasTemplateSource) {
+        compiledTemplate = templateCache.get(cacheKey);
+      } else if (shouldCache) {
+        compiledTemplate = templateCache.get(cacheKey);
+      } else {
+        try {
+          templateMtimeMs = fs.statSync(filePath).mtimeMs;
+        } catch {
+          templateMtimeMs = 0;
+        }
+        if (templateTimestamps.get(cacheKey) === templateMtimeMs) {
+          compiledTemplate = templateCache.get(cacheKey);
+        }
+      }
 
       if (!compiledTemplate) {
-        const templateSource = options?.templateSource || fs.readFileSync(filePath, 'utf-8');
+        const templateSource = template !== undefined ? template : fs.readFileSync(filePath, 'utf-8');
         const compiledSource = options?.compileTemplate
           ? options.compileTemplate(templateSource)
           : compileBladeDirectives(templateSource, options?.directives);
 
         compiledTemplate = ejs.compile(compiledSource, {
           filename: filePath,
-          cache: shouldCache,
+          cache: false,
           async: false,
         });
 
-        if (shouldCache) {
-          templateCache.set(filePath, compiledTemplate);
+        templateCache.set(cacheKey, compiledTemplate);
+        if (!hasTemplateSource) {
+          templateTimestamps.set(cacheKey, templateMtimeMs);
         }
       }
 
@@ -130,7 +155,7 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
           locals.csrfToken ||
           (typeof locals.req?.csrfToken === 'function' ? locals.req.csrfToken() : '') ||
           '';
-        return token ? `<input type="hidden" name="_token" value="${token}">` : '';
+        return token ? `<input type="hidden" name="_token" value="${escapeHtmlAttr(token)}">` : '';
       };
 
       locals.json = (value: any) => {
@@ -138,9 +163,9 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
       };
 
       if (!locals.routes) {
-        locals.routes = (group?: string) => {
+        locals.routes = (_group?: string) => {
           if (locals.routeConfig || locals.ziggy) {
-            const routesData = JSON.stringify(locals.routeConfig || locals.ziggy);
+            const routesData = JSON.stringify(locals.routeConfig || locals.ziggy).replace(/</g, '\\u003c');
             return `<script>const Ziggy = ${routesData};</script>`;
           }
           return '';
@@ -149,8 +174,8 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
 
       const html = compiledTemplate(locals);
       callback(null, html);
-    } catch (err: any) {
-      callback(err);
+    } catch (err: unknown) {
+      callback(err instanceof Error ? err : new Error(String(err)));
     }
   };
 }
@@ -166,5 +191,8 @@ export const inertiaEngine = createInertiaEngine();
 export function clearEngineCache(): void {
   for (const cache of engineCaches) {
     cache.clear();
+  }
+  for (const timestamps of engineTimestamps) {
+    timestamps.clear();
   }
 }

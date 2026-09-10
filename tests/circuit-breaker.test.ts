@@ -1,17 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   CircuitBreaker,
   shouldRetry,
   calculateBackoff,
   DEFAULT_CIRCUIT_OPTIONS,
   DEFAULT_RETRY_OPTIONS,
-  resetAllCircuitBreakers,
 } from '../src/circuit-breaker.js';
 
 describe('CircuitBreaker', () => {
-  beforeEach(() => {
-    resetAllCircuitBreakers();
-  });
 
   it('starts in CLOSED state', () => {
     const breaker = new CircuitBreaker();

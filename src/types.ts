@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from 'express';
-import type { CircuitBreakerOptions, RetryOptions, SSRResilienceOptions } from './circuit-breaker.js';
+import type { Request } from 'express';
+import type { CircuitBreakerOptions, RetryOptions } from './circuit-breaker.js';
 
 /**
  * Standard Inertia Page Object sent to client-side adapters.
@@ -38,6 +38,12 @@ export interface SecurityOptions {
    * Allowed characters for component names. Defaults to alphanumeric, slashes, hyphens, and underscores.
    */
   componentNamePattern?: RegExp;
+  /**
+   * Whether to sanitize view data by stripping functions and undefined values.
+   * Independently configurable from component name validation.
+   * @default true
+   */
+  sanitizeViewData?: boolean;
 }
 
 /**
@@ -384,6 +390,10 @@ declare global {
   namespace Express {
     interface Request {
       inertia: InertiaRequestHelper;
+      /**
+       * Request correlation ID set by `requestIdMiddleware`.
+       */
+      id?: string;
     }
     interface Response {
       inertia: InertiaResponseHandler;

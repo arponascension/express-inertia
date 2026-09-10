@@ -59,8 +59,6 @@ export const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   retryableStatusCodes: [408, 429, 500, 502, 503, 504],
 };
 
-const circuitBreakers = new Map<string, CircuitBreaker>();
-
 export class CircuitBreaker {
   private state: CircuitState = 'CLOSED';
   private failures = 0;
@@ -156,13 +154,6 @@ export function shouldRetry(
   }
 
   return false;
-}
-
-export function resetAllCircuitBreakers(): void {
-  for (const breaker of circuitBreakers.values()) {
-    breaker.reset();
-  }
-  circuitBreakers.clear();
 }
 
 export function calculateBackoff(

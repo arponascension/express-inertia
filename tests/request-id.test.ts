@@ -8,7 +8,7 @@ describe('requestIdMiddleware', () => {
     const app = express();
     app.use(requestIdMiddleware());
     app.get('/test', (req, res) => {
-      res.json({ id: (req as any).id });
+      res.json({ id: req.id });
     });
 
     const res = await request(app).get('/test');
@@ -22,7 +22,7 @@ describe('requestIdMiddleware', () => {
     const app = express();
     app.use(requestIdMiddleware());
     app.get('/test', (req, res) => {
-      res.json({ id: (req as any).id });
+      res.json({ id: req.id });
     });
 
     const res = await request(app)
@@ -36,7 +36,7 @@ describe('requestIdMiddleware', () => {
     const app = express();
     app.use(requestIdMiddleware());
     app.get('/test', (req, res) => {
-      res.json({ id: (req as any).id });
+      res.json({ id: req.id });
     });
 
     const ids = await Promise.all([

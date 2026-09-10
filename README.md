@@ -1,39 +1,89 @@
-# @arponascension/express-inertia 🚀
+# Express-Inertia — Inertia.js Middleware, Adapter & SSR for Express.js
 
 [![npm version](https://img.shields.io/npm/v/@arponascension/express-inertia.svg)](https://npmjs.com/package/@arponascension/express-inertia)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![CI](https://github.com/arponascension/express-inertia/actions/workflows/ci.yml/badge.svg)](https://github.com/arponascension/express-inertia/actions)
 [![Bundle Size](https://img.shields.io/badge/bundle_minified-40KB-green.svg)](https://github.com/arponascension/express-inertia)
 
-**Next-generation Inertia.js adapter and middleware for Express.js** with Blade-style EJS directives, Vite integration, SSR resilience, security hardening, and first-class TypeScript support.
+**@arponascension/express-inertia** is a production-ready **Inertia.js adapter for Express.js**. It brings the official [Inertia.js](https://inertiajs.com) protocol to **Node.js and Express** apps so you can build modern **single-page applications (SPAs)** with **Vue 3**, **React**, or **Svelte** using classic server-side routing and controllers — without the complexity of a REST API or a client-side router.
+
+It ships with a **Blade-style EJS template engine**, **zero-config Vite** integration (HMR in development, hashed `manifest.json` in production), **server-side rendering (SSR)** with circuit-breaker resilience, **security hardening**, **edge-runtime support** (Cloudflare Workers, Vercel Edge, Netlify Edge), and **first-class TypeScript** types — all in a tree-shakeable ~40KB bundle.
+
+> New to Inertia.js? Read [What is Inertia.js?](#what-is-inertiajs) or the [official documentation](https://inertiajs.com/docs).
 
 ---
 
-## ✨ Why express-inertia?
+## Table of Contents
 
-| Feature | Benefit |
+- [What is Inertia.js?](#what-is-inertiajs)
+- [Why use Inertia.js with Express?](#why-use-inertiajs-with-express)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start: Express + Inertia + Vue 3](#quick-start-express--inertia--vue-3)
+- [Using Inertia.js with React](#using-inertiajs-with-react)
+- [Blade-style EJS Directives for Express](#blade-style-ejs-directives-for-express)
+- [Vite Integration for Express](#vite-integration-for-express)
+- [Server-Side Rendering (SSR) for SEO](#server-side-rendering-ssr-for-seo)
+- [Response API: `res.inertia()`](#response-api-resinertia)
+- [Prop Helpers (Lazy, Deferred, Merge)](#prop-helpers-lazy-deferred-merge)
+- [Security Hardening](#security-hardening)
+- [Structured Logging](#structured-logging)
+- [Edge Runtime Compatibility](#edge-runtime-compatibility)
+- [Resilience: Circuit Breaker & Retry](#resilience-circuit-breaker--retry)
+- [Performance](#performance)
+- [API Reference](#api-reference)
+- [FAQ](#faq)
+- [Compatibility Matrix](#compatibility-matrix)
+- [Testing](#testing)
+- [Resources & Ecosystem](#resources--ecosystem)
+- [License](#license)
+
+---
+
+## What is Inertia.js?
+
+[Inertia.js](https://inertiajs.com) is a protocol (by [Jonathan Reinink](https://twitter.com/reinink)) for building **modern single-page applications (SPAs)** with **classic server-side routing and controllers**. Instead of building a JSON API and a separate JavaScript frontend, you keep writing server-side routes and controllers exactly as you do today — but render your pages with **Vue**, **React**, or **Svelte** components.
+
+Inertia requests return plain JSON to the client (no full page reloads); real full-page visits return your server-rendered HTML template. Page components, props, versions, and partial reloads are all handled automatically by the Inertia protocol.
+
+**express-inertia** is the Inertia.js server-side adapter for **Express.js** / **Node.js** — the Node equivalent of the official [Laravel adapter](https://inertiajs.com/docs/seeding-data) and [Raill adapter](https://inertiajs.com/docs/rails/getting-started). The client side stays 100% compatible with the official `@inertiajs/vue3`, `@inertiajs/react`, and `@inertiajs/svelte` packages.
+
+## Why use Inertia.js with Express?
+
+- **No API layer, no client router** — classic MVC controllers on the server, components on the client.
+- **SEO-friendly** — full-page visits serve real HTML; enable **SSR** to pre-render pages for search engine indexing.
+- **Fast navigation** — Inertia requests are small JSON payloads with automatic prop merging, lazy evaluation, and deferred data.
+- **One codebase** — policies, validation, and DB queries stay where they belong, in your Express routes.
+
+## Features
+
+| Feature | What you get |
 |---|---|
-| Blade-style EJS | Write Laravel Blade syntax (`@inertia`, `@vite`, `@csrf`) directly in `.ejs` templates |
-| Zero-config Vite | Auto HMR in dev, hashed `manifest.json` in production |
-| SSR Resilience | Circuit breaker, retries with backoff, graceful client-side fallback |
-| Security Hardened | Component name validation, viewData sanitization, SRI hash generation |
-| Form Helpers | Semantic `postForm`, `putForm`, `patchForm`, `deleteForm` with flash messages |
-| Prefetch Ready | Generate `<link rel="prefetch">` / `<link rel="preload">` from Vite manifest |
-| Edge Compatible | Works on Cloudflare Workers, Vercel Edge, Netlify Edge via injected manifest/config |
-| Structured Logging | Pluggable logger abstraction with request correlation IDs |
+| **Blade-style EJS directives** | Write Laravel Blade syntax (`@inertia`, `@vite`, `@csrf`, `@inertiaHead`) directly inside `.ejs` templates |
+| **Zero-config Vite integration** | Automatic HMR in development; hashed `manifest.json` asset resolution in production |
+| **Server-side rendering (SSR)** | Express + Inertia SSR endpoint proxying with retry/backoff and **circuit breaker** fallback to client rendering |
+| **Security hardening** | Component name validation against path traversal, `viewData` sanitization, SRI hash generation |
+| **Form helpers** | Semantic `postForm`, `putForm`, `patchForm`, `deleteForm` with flash messages |
+| **Prefetch & preload** | Auto-generate `<link rel="prefetch">` / `<link rel="preload">` tags from the Vite manifest |
+| **Edge compatible** | Works on Cloudflare Workers, Vercel Edge, Netlify Edge via injected manifest/config (no `fs`) |
+| **Structured logging** | Pluggable logger abstraction with request correlation IDs (`X-Request-ID`) |
+| **TypeScript first** | Full type definitions, ESM + CJS builds, tree-shakeable ~40KB bundle |
 
 ---
 
-## 📦 Installation
+## Installation
+
+**Requirements:** Node.js `>=18` (the runtime globals `fetch`, `AbortController`, `crypto.randomUUID`, and `fs.rmSync` are used by the SSR and middleware layers). Express `^4.18 || ^5` is a peer dependency.
 
 ```bash
 npm install @arponascension/express-inertia ejs express
 
-# Choose one client adapter:
+# Choose one client adapter — Vue 3:
 npm install @inertiajs/vue3 vue
 npm install -D vite @vitejs/plugin-vue
 
-# Or use React:
+# Or React:
 npm install @inertiajs/react react react-dom
 npm install -D vite @vitejs/plugin-react
 ```
@@ -46,9 +96,9 @@ npm install express
 
 ---
 
-## 🚀 Quick Start
+## Quick Start: Express + Inertia + Vue 3
 
-### 1. Configure Express Server
+### 1. Configure the Express Inertia middleware
 
 ```ts
 import express from 'express';
@@ -57,17 +107,17 @@ import { inertia, createInertiaEngine } from '@arponascension/express-inertia';
 
 const app = express();
 
-// Blade-compatible EJS View Engine
+// Blade-compatible EJS view engine for Express
 app.engine('ejs', createInertiaEngine());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Parse request bodies & serve static files
+// Parse request bodies and serve static files
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Inertia Middleware
+// Inertia.js middleware for Express
 app.use(
   inertia({
     rootView: 'base.ejs',
@@ -79,7 +129,7 @@ app.use(
   })
 );
 
-// Routes
+// Classic server-side routes
 app.get('/', (req, res) => {
   res.inertia('Home', { title: 'Welcome Home' });
 });
@@ -87,7 +137,7 @@ app.get('/', (req, res) => {
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
 ```
 
-### 2. Create Root View (`views/base.ejs`)
+### 2. Create the root view (`views/base.ejs`)
 
 ```html
 <!DOCTYPE html>
@@ -107,7 +157,7 @@ app.listen(3000, () => console.log('Server running on http://localhost:3000'));
 </html>
 ```
 
-### 3. Configure the Vue client (`src/main.ts`)
+### 3. Configure the Vue 3 client (`src/main.ts`)
 
 ```ts
 import { createApp, h } from 'vue';
@@ -121,7 +171,25 @@ createInertiaApp({
 });
 ```
 
-### 4. Configure the React client (`src/main.tsx`) (alternative)
+### 4. Configure Vite (`vite.config.ts`)
+
+```ts
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
+
+export default defineConfig({
+  plugins: [vue(), inertiaVitePlugin()],
+  base: '/build/',
+  build: { manifest: true, outDir: 'public/build' },
+});
+```
+
+Start Express and Vite in separate terminals during development; `inertiaVitePlugin()` writes `public/hot` so the EJS root view automatically uses the Vite dev server. Run `vite build` before production deployment to write `public/build/.vite/manifest.json`.
+
+## Using Inertia.js with React
+
+Install the React client adapter, configure the React client (`src/main.tsx`):
 
 ```tsx
 import { createRoot } from 'react-dom/client';
@@ -142,21 +210,7 @@ For React, use a `.tsx` entrypoint in the root view and include `@viteReactRefre
 @vite('src/main.tsx')
 ```
 
-### 5. Configure Vite for Vue (`vite.config.ts`)
-
-```ts
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
-import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
-
-export default defineConfig({
-  plugins: [vue(), inertiaVitePlugin()],
-  base: '/build/',
-  build: { manifest: true, outDir: 'public/build' },
-});
-```
-
-For React, replace the Vue plugin with `@vitejs/plugin-react` and keep the same `inertiaVitePlugin()`:
+Replace the Vue plugin with `@vitejs/plugin-react` in `vite.config.ts` and keep the same `inertiaVitePlugin()`:
 
 ```ts
 import { defineConfig } from 'vite';
@@ -170,13 +224,11 @@ export default defineConfig({
 });
 ```
 
-Start Express and Vite in separate terminals during development; `inertiaVitePlugin()` writes `public/hot` so the EJS root view automatically uses the Vite dev server. Run `vite build` before production deployment to write `public/build/.vite/manifest.json`.
-
 ---
 
-## 🏷️ Blade Directives & Components
+## Blade-style EJS Directives for Express
 
-Write Laravel Blade-style syntax inside EJS templates:
+Write Laravel Blade-style syntax inside EJS templates, powered by a custom Express view engine:
 
 | Directive | Component Tag | Output |
 |---|---|---|
@@ -190,7 +242,7 @@ Write Laravel Blade-style syntax inside EJS templates:
 | `@routes` | `<x-routes />` | Ziggy / route definitions |
 | `@json(myVar)` | — | Safely stringifies a JS object |
 
-### Custom Directives
+### Custom directives
 
 ```ts
 import { registerDirective } from '@arponascension/express-inertia';
@@ -200,11 +252,87 @@ registerDirective('uppercase', (args) => `<%= (${args}).toUpperCase() %>`);
 
 ---
 
-## ⚡ Response API
+## Vite Integration for Express
+
+Auto-detects the Vite dev server via the hot file (`public/hot`) and reads `manifest.json` in production:
+
+```ts
+app.use(
+  inertia({
+    vite: {
+      publicDir: 'public',
+      buildDir: 'build',
+      devServerUrl: 'http://localhost:5173',
+      hotFile: 'public/hot',
+      base: '/build/',
+    },
+  })
+);
+```
+
+### Prefetch and preload helpers
+
+```ts
+import { createPrefetchHelper } from '@arponascension/express-inertia';
+
+const prefetch = createPrefetchHelper(viteHelper);
+
+// In your base template:
+<%= prefetch.prefetch('src/Pages/Dashboard.vue') %>
+// <link rel="prefetch" href="/build/assets/Dashboard.abc1234.js">
+
+<%= prefetch.preload('src/main.ts') %>
+// <link rel="preload" href="/build/assets/main.abc1234.js">
+```
+
+---
+
+## Server-Side Rendering (SSR) for SEO
+
+**Server-side rendering (SSR) pre-renders your JavaScript pages on the server, so visitors and search engines receive fully rendered HTML** — better indexability, faster first paint, and a better core-web-vitals story. Inertia's official SSR server is a Node.js background process; `express-inertia` proxies render requests to it (default `http://127.0.0.1:13714/render`) with **retries, exponential backoff, a circuit breaker, and graceful client-side fallback** if SSR fails.
+
+```ts
+app.use(
+  inertia({
+    ssr: {
+      enabled: true,
+      url: 'http://127.0.0.1:13714/render',
+      timeout: 2000,
+      fallback: true,
+      retry: { maxRetries: 2, baseDelayMs: 200, maxDelayMs: 2000 },
+      circuitBreaker: { failureThreshold: 5, cooldownMs: 30000 },
+    },
+  })
+);
+```
+
+Or pass a custom in-process render function (no HTTP endpoint needed):
+
+```ts
+app.use(
+  inertia({
+    ssr: {
+      enabled: true,
+      render: async (page) => {
+        return {
+          head: [`<title inertia>${page.props.title}</title>`],
+          body: '<div id="app">...</div>',
+        };
+      },
+    },
+  })
+);
+```
+
+Set up the SSR server for your client framework following the [official Inertia.js SSR guide](https://inertiajs.com/docs/v3/advanced/server-side-rendering).
+
+---
+
+## Response API: `res.inertia()`
 
 ### `res.inertia(component, props?, viewData?)`
 
-Renders an Inertia response. In AJAX requests it returns JSON; on full page loads it renders the root template.
+Renders an Inertia response. In AJAX (X-Inertia) requests it returns JSON; on full page loads it renders the root template with `viewData` passed only to the template:
 
 ```ts
 app.get('/users', (req, res) => {
@@ -216,7 +344,7 @@ app.get('/users', (req, res) => {
 });
 ```
 
-### Form Helpers
+### Form helpers
 
 Semantic form submission helpers with automatic method semantics:
 
@@ -238,7 +366,7 @@ app.delete('/account', (req, res) => {
 });
 ```
 
-### Flash Messages
+### Flash messages
 
 ```ts
 res.inertia
@@ -246,17 +374,17 @@ res.inertia
   .inertia('Dashboard');
 ```
 
-### Redirect Helpers
+### Redirect helpers
 
 ```ts
-// External redirect / full reload
+// External redirect / full reload (409 + X-Inertia-Location)
 res.inertia.location('https://stripe.com/checkout');
 
 // Back to referrer (303 See Other)
 res.inertia.back('/dashboard');
 ```
 
-### History Encryption (Inertia v2)
+### History encryption (Inertia v2)
 
 ```ts
 res.inertia.encryptHistory(true);
@@ -266,7 +394,9 @@ res.inertia('SecretReport');
 
 ---
 
-## 🔄 Prop Helpers
+## Prop Helpers (Lazy, Deferred, Merge)
+
+Fine-grained control over what props are sent to the client:
 
 ```ts
 import { lazy, always, defer, merge, optional } from '@arponascension/express-inertia';
@@ -295,83 +425,9 @@ app.get('/dashboard', (req, res) => {
 
 ---
 
-## ⚡ Vite Integration
+## Security Hardening
 
-Auto-detects Vite dev server via hot file. Reads `manifest.json` in production.
-
-```ts
-app.use(
-  inertia({
-    vite: {
-      publicDir: 'public',
-      buildDir: 'build',
-      devServerUrl: 'http://localhost:5173',
-      hotFile: 'public/hot',
-      base: '/build/',
-    },
-  })
-);
-```
-
-### Prefetch Helpers
-
-```ts
-import { createPrefetchHelper } from '@arponascension/express-inertia';
-
-const prefetch = createPrefetchHelper(viteHelper);
-
-// In your base template:
-<%= prefetch.prefetch('src/Pages/Dashboard.vue') %>
-// <link rel="prefetch" href="/build/assets/Dashboard.abc1234.js">
-
-<%= prefetch.preload('src/main.ts') %>
-// <link rel="preload" href="/build/assets/main.abc1234.js">
-```
-
----
-
-## 🌐 Server-Side Rendering (SSR)
-
-With built-in resilience:
-
-```ts
-app.use(
-  inertia({
-    ssr: {
-      enabled: true,
-      url: 'http://127.0.0.1:13714/render',
-      timeout: 2000,
-      fallback: true,
-      retry: { maxRetries: 2, baseDelayMs: 200, maxDelayMs: 2000 },
-      circuitBreaker: { failureThreshold: 5, cooldownMs: 30000 },
-    },
-  })
-);
-```
-
-Or custom render function:
-
-```ts
-app.use(
-  inertia({
-    ssr: {
-      enabled: true,
-      render: async (page) => {
-        return {
-          head: [`<title inertia>${page.props.title}</title>`],
-          body: '<div id="app">...</div>',
-        };
-      },
-    },
-  })
-);
-```
-
----
-
-## 🔒 Security
-
-### Component Name Validation
+### Component name validation
 
 Prevents path traversal and injection attacks:
 
@@ -386,11 +442,24 @@ app.use(
 );
 ```
 
-### ViewData Sanitization
+### ViewData sanitization
 
-Automatically strips functions and undefined values from template data.
+Automatically strips functions and `undefined` values from template data. Independently configurable from component name validation via `sanitizeViewData`:
 
-### SRI Hash Generation
+```ts
+app.use(
+  inertia({
+    security: {
+      validateComponentNames: false, // allow arbitrary component names
+      sanitizeViewData: true, // still sanitize view data (default)
+    },
+  })
+);
+```
+
+Set `sanitizeViewData: false` to preserve functions and `undefined` values in template locals (e.g. when passing helper functions to your root view by design).
+
+### SRI hash generation
 
 ```ts
 import { generateSriHash } from '@arponascension/express-inertia';
@@ -401,7 +470,7 @@ const hash = await generateSriHash(assetContent);
 
 ---
 
-## 🧪 Structured Logging
+## Structured Logging
 
 Replace `console.warn` with a pluggable logger:
 
@@ -412,7 +481,7 @@ import pino from 'pino';
 setGlobalLogger(createLogger({ prefix: 'my-app', logger: pino() }));
 ```
 
-### Request Correlation IDs
+### Request correlation IDs
 
 ```ts
 import { requestIdMiddleware } from '@arponascension/express-inertia';
@@ -425,9 +494,9 @@ Correlates logs across the request lifecycle using `X-Request-ID` or auto-genera
 
 ---
 
-## 🌍 Edge Runtime Compatibility
+## Edge Runtime Compatibility
 
-Works on Cloudflare Workers, Vercel Edge, and Netlify Edge by bypassing Node.js `fs`/`path`:
+Works on Cloudflare Workers, Vercel Edge, and Netlify Edge by bypassing Node.js `fs`/`path` — inject the manifest, config, and template source directly:
 
 ```ts
 const viteHelper = createViteHelper({
@@ -444,9 +513,9 @@ app.engine('ejs', createInertiaEngine({
 
 ---
 
-## 🛡️ Resilience
+## Resilience: Circuit Breaker & Retry
 
-### Circuit Breaker (SSR)
+### Circuit breaker (SSR)
 
 Prevents cascade failures when the SSR endpoint is down:
 
@@ -460,7 +529,7 @@ const breaker = new CircuitBreaker({
 });
 ```
 
-### Retry with Exponential Backoff
+### Retry with exponential backoff
 
 ```ts
 import { calculateBackoff } from '@arponascension/express-inertia';
@@ -470,29 +539,29 @@ const delay = calculateBackoff(attempt, 200, 2000);
 
 ---
 
-## 🎯 Performance
+## Performance
 
-- **Tree-shakeable**: Import only what you need
-- **Template caching**: Compiled EJS templates cached in development
-- **Lazy props**: Defer expensive computations until needed
-- **Prefetching**: Preload likely navigation targets
-- **Minified bundle**: ~40KB gzipped main entry
+- **Tree-shakeable**: import only what you need (ESM + CJS dual builds)
+- **Template caching**: compiled EJS templates cached (mtime-based in development, ejs `cache: true` in production)
+- **Lazy props**: defer expensive computations until needed
+- **Prefetching**: preload likely navigation targets from the Vite manifest
+- **Minified bundle**: ~40KB main entry
 
 ---
 
-## 📚 API Reference
+## API Reference
 
 ### Middleware
 
 | Export | Description |
 |---|---|
-| `inertia(options?)` | Express middleware factory |
+| `inertia(options?)` | Inertia.js Express middleware factory |
 | `createInertia(options?)` | Same as `inertia`, explicit name |
 | `requestIdMiddleware()` | Assigns `req.id` for log correlation |
 | `createInertiaEngine(options?)` | EJS view engine with Blade support |
 | `inertiaEngine` | Default engine instance |
 
-### Prop Helpers
+### Prop helpers
 
 | Export | Description |
 |---|---|
@@ -520,7 +589,7 @@ const delay = calculateBackoff(attempt, 200, 2000);
 
 | Export | Description |
 |---|---|
-| `CircuitBreaker` | CLOSED/OPEN/HALF_OPEN state machine |
+| `CircuitBreaker` | CLOSED / OPEN / HALF_OPEN state machine |
 | `shouldRetry(error, status, codes)` | Retry decision helper |
 | `calculateBackoff(attempt, base, max)` | Exponential backoff with jitter |
 | `resetAllCircuitBreakers()` | Bulk reset for testing |
@@ -530,32 +599,85 @@ const delay = calculateBackoff(attempt, 200, 2000);
 | Export | Description |
 |---|---|
 | `createViteHelper(config?)` | Vite asset resolver |
-| `inertiaVitePlugin(opts?)` | Auto write/remove hot file |
-| `createPrefetchHelper(viteHelper)` | Prefetch/preload generator |
+| `inertiaVitePlugin(opts?)` | Auto write/remove the Vite hot file |
+| `createPrefetchHelper(viteHelper)` | Prefetch/preload tag generator |
 
 ---
 
-## 🧪 Testing
+## FAQ
+
+### What is Inertia.js?
+
+Inertia.js is a protocol for building modern single-page applications (SPAs) using classic server-side routing and controllers, without building an API. Server routes render Vue, React, or Svelte page components; navigation between pages uses small JSON responses instead of full page reloads.
+
+### How do I use Inertia.js with Express?
+
+Install `@arponascension/express-inertia`, register the `inertia()` middleware (plus the `createInertiaEngine()` EJS view engine), and return `res.inertia('Component', { props })` from your routes. See the [Quick Start](#quick-start-express--inertia--vue-3) above.
+
+### Does express-inertia support Vue 3, React, and Svelte?
+
+Yes — the client side uses the official `@inertiajs/vue3`, `@inertiajs/react`, and `@inertiajs/svelte` packages, so whichever framework you use with Vite works with this adapter.
+
+### Does express-inertia support server-side rendering (SSR)?
+
+Yes. Enable `ssr: { enabled: true }` and point it at the official Inertia SSR server (or pass a custom `render` function). SSR is protected by retries, exponential backoff, and a circuit breaker with client-side fallback.
+
+### What template engine does express-inertia use?
+
+EJS, extended with Laravel Blade-style directives (`@inertia`, `@vite`, `@csrf`, `@inertiaHead`, and more). A custom `createInertiaEngine()` is provided so templates load through Express's normal view engine mechanism.
+
+### Is express-inertia compatible with edge runtimes?
+
+Yes. Provide `manifest`/`isDev`/`devServerUrlOverride` and a `templateSource` so no Node.js `fs` or `path` access is required — it runs on Cloudflare Workers, Vercel Edge, and Netlify Edge.
+
+### Which versions of Node.js and Express are supported?
+
+Node.js `>=18` (tested on 18, 20, 22, 25.8.x) and Express `^4.18 || ^5`. See the [compatibility matrix](#compatibility-matrix).
+
+---
+
+## Compatibility Matrix
+
+The following versions are exercised by the integration suite. Test your application before upgrading a major version.
+
+| Dependency | Supported | Tested |
+|---|---|---|
+| Node.js | >= 18 | 18, 20, 22, 25.8.x |
+| Express | ^4.18 \|\| ^5 | 4.22.x |
+| `@inertiajs/core` | 2.x | 2.3.27 |
+| Vue | 3.x | 3.5.42 |
+
+---
+
+## Testing
 
 ```bash
 npm test
 ```
 
-Run the full test suite with Vitest. The suite includes Vue/Inertia protocol integration coverage and a real Vite production-manifest build.
+Run the full test suite with [Vitest](https://vitest.dev). The suite includes Vue/Inertia protocol integration coverage and a real Vite production-manifest build.
 
-## ✅ Compatibility
-
-The following versions are exercised by the integration suite. Test your application before upgrading a major version.
-
-| Dependency | Tested versions |
-|---|---|
-| Node.js | 25.8.x |
-| Express | 4.22.x |
-| `@inertiajs/core` | 2.3.27 |
-| Vue | 3.5.42 |
+```bash
+npm run typecheck   # TypeScript type checking
+npm run lint        # ESLint
+npm run test:coverage # Coverage report (v8)
+```
 
 ---
 
-## 📄 License
+## Resources & Ecosystem
 
-MIT © [Arpon](https://github.com/Arpon)
+- [Inertia.js Documentation](https://inertiajs.com/docs) — the official protocol, client setup, and SSR guide
+- [inertiajs/inertia](https://github.com/inertiajs/inertia) — the official client library monorepo (Vue, React, Svelte)
+- [Express.js](https://expressjs.com) — the Node.js web framework this adapter targets
+- [Vite](https://vite.dev) — the frontend build tool used for HMR and production bundles
+- [CHANGELOG.md](./CHANGELOG.md) — release notes
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — how to contribute
+
+Looking for Inertia.js on another framework? Official adapters exist for [Laravel](https://inertiajs.com/docs/getting-started), and community adapters cover Fastify, Hono, and Rails.
+
+---
+
+## License
+
+MIT © [Arpon Ascension](https://github.com/arponascension/)

@@ -35,18 +35,20 @@ export class PrefetchHelper {
     const tags: string[] = [];
 
     if (this.viteHelper.isDev()) {
-      const devUrl = this.viteHelper['getDevServerUrl']().replace(/\/$/, '');
+      const devUrl = this.viteHelper.getDevServerUrl().replace(/\/$/, '');
       for (const entry of entrypoints) {
         const cleanEntry = entry.replace(/^\//, '');
-        tags.push(`<link rel="${mode}" href="${devUrl}/${cleanEntry}" crossorigin>`);
+        const attrs = [`rel="${mode}"`, `href="${devUrl}/${cleanEntry}"`];
+        if (options.crossorigin) {
+          attrs.push('crossorigin');
+        }
+        tags.push(`<link ${attrs.join(' ')}>`);
       }
       return tags.join('\n');
     }
 
-    const manifest = this.viteHelper['getManifest']();
-    const basePath = this.viteHelper['config'].base.endsWith('/')
-      ? this.viteHelper['config'].base
-      : `${this.viteHelper['config'].base}/`;
+    const manifest = this.viteHelper.getManifest();
+    const basePath = this.viteHelper.getBasePath();
 
     const rendered = new Set<string>();
 

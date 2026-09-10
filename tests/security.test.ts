@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import type { Page } from '../src/types.js';
 import {
   validateComponentName,
   sanitizeViewData,
   generateSriHash,
-  DEFAULT_COMPONENT_NAME_PATTERN,
+  escapeHtmlAttr,
+  serializePage,
 } from '../src/utils.js';
 
 describe('Security Utilities', () => {
@@ -86,6 +88,50 @@ describe('Security Utilities', () => {
       const result = sanitizeViewData(circular);
       expect(result.a).toBe(1);
       expect(result.self).toBeUndefined();
+    });
+  });
+
+  describe('escapeHtmlAttr', () => {
+    it('escapes HTML attribute-significant characters', () => {
+      expect(escapeHtmlAttr('a&b"c\'d<e>f')).toBe('a&amp;b&quot;c&#39;d&lt;e&gt;f');
+    });
+
+    it('leaves safe strings untouched', () => {
+      expect(escapeHtmlAttr('simple-safe-value')).toBe('simple-safe-value');
+    });
+  });
+
+  describe('serializePage', () => {
+    it('produces attribute-safe JSON for the data-page attribute', () => {
+      const page: Page = {
+        component: 'Home',
+        props: { title: 'Hi <script>' },
+        url: '/',
+        version: '1.0',
+      };
+
+      const out = serializePage(page);
+
+      expect(out).toContain('&quot;component&quot;');
+      expect(out).toContain('&lt;script&gt;');
+      expect(out).not.toContain('<');
+      expect(out).not.toContain('"component"');
+    });
+
+    it('replaces circular references with null', () => {
+      const circular: any = {};
+      circular.self = circular;
+      const page: any = {
+        component: 'Home',
+        props: circular,
+        url: '/',
+        version: null,
+      };
+
+      const out = serializePage(page);
+
+      expect(out).toContain('null');
+      expect(out).toContain('&quot;component&quot;');
     });
   });
 

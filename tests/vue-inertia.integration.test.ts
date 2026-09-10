@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import fs from 'node:fs';
@@ -11,26 +11,44 @@ const run = promisify(execFile);
 const fixture = path.resolve('tests/temp_vue_inertia_client');
 const publicDir = path.join(fixture, 'public');
 const buildDir = path.join(publicDir, 'build');
+const manifestPath = path.join(buildDir, '.vite', 'manifest.json');
+
+function fixtureBuildIsCurrent(): boolean {
+  if (!fs.existsSync(manifestPath)) {
+    return false;
+  }
+  const manifestMtime = fs.statSync(manifestPath).mtimeMs;
+  const inputs = [
+    path.join(fixture, 'src', 'main.ts'),
+    path.join(fixture, 'src', 'Pages', 'Home.vue'),
+    path.join(fixture, 'views', 'app.ejs'),
+    path.join(fixture, 'vite.config.mjs'),
+    path.resolve('node_modules/vite/package.json'),
+    path.resolve('node_modules/@vitejs/plugin-vue/package.json'),
+    path.resolve('node_modules/vue/package.json'),
+  ];
+  return inputs.every((file) => fs.existsSync(file) && fs.statSync(file).mtimeMs <= manifestMtime);
+}
 
 describe('Vue Inertia client protocol integration', () => {
   beforeAll(async () => {
     // Compile a real Vue + @inertiajs/vue3 entrypoint in a temporary fixture.
     fs.mkdirSync(path.join(fixture, 'src', 'Pages'), { recursive: true });
     fs.mkdirSync(path.join(fixture, 'views'), { recursive: true });
-    fs.writeFileSync(path.join(fixture, 'src', 'main.ts'), `
-      import { createApp, h } from 'vue'; import { createInertiaApp } from '@inertiajs/vue3';
-      createInertiaApp({ resolve: (name) => import('./Pages/' + name + '.vue'),
-        setup: ({ el, App, props, plugin }) => createApp({ render: () => h(App, props) }).use(plugin).mount(el) });`);
-    fs.writeFileSync(path.join(fixture, 'src', 'Pages', 'Home.vue'), '<template><main>{{ message }}</main></template><script setup lang="ts">defineProps<{ message: string }>()</script>');
-    fs.writeFileSync(path.join(fixture, 'views', 'app.ejs'), '<!doctype html><html><head>@vite(\'src/main.ts\')</head><body>@inertia</body></html>');
-    fs.writeFileSync(path.join(fixture, 'vite.config.mjs'), `
-      import { defineConfig } from 'vite'; import vue from '@vitejs/plugin-vue';
-      export default defineConfig({ plugins: [vue()], base: '/build/', publicDir: false,
-        build: { manifest: true, outDir: 'public/build', emptyOutDir: true, rollupOptions: { input: 'src/main.ts' } } });`);
-    await run(process.execPath, [path.resolve('node_modules/vite/bin/vite.js'), 'build', '--config', path.join(fixture, 'vite.config.mjs'), '--logLevel', 'silent'], { cwd: fixture });
+    if (!fixtureBuildIsCurrent()) {
+      fs.writeFileSync(path.join(fixture, 'src', 'main.ts'), `
+        import { createApp, h } from 'vue'; import { createInertiaApp } from '@inertiajs/vue3';
+        createInertiaApp({ resolve: (name) => import('./Pages/' + name + '.vue'),
+          setup: ({ el, App, props, plugin }) => createApp({ render: () => h(App, props) }).use(plugin).mount(el) });`);
+      fs.writeFileSync(path.join(fixture, 'src', 'Pages', 'Home.vue'), '<template><main>{{ message }}</main></template><script setup lang="ts">defineProps<{ message: string }>()</script>');
+      fs.writeFileSync(path.join(fixture, 'views', 'app.ejs'), '<!doctype html><html><head>@vite(\'src/main.ts\')</head><body>@inertia</body></html>');
+      fs.writeFileSync(path.join(fixture, 'vite.config.mjs'), `
+        import { defineConfig } from 'vite'; import vue from '@vitejs/plugin-vue';
+        export default defineConfig({ plugins: [vue()], base: '/build/', publicDir: false,
+          build: { manifest: true, outDir: 'public/build', emptyOutDir: true, rollupOptions: { input: 'src/main.ts' } } });`);
+      await run(process.execPath, [path.resolve('node_modules/vite/bin/vite.js'), 'build', '--config', path.join(fixture, 'vite.config.mjs'), '--logLevel', 'silent'], { cwd: fixture });
+    }
   }, 30_000);
-
-  afterAll(() => fs.rmSync(fixture, { recursive: true, force: true }));
 
   function createApp() {
     const app = express();

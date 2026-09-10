@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    text-size-adjust: 100%;
+    tab-size: 4;
+  }
+
+  body {
+    @apply bg-wash text-primary font-text text-base antialiased;
+    text-rendering: optimizeLegibility;
+    font-variant-ligatures: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: rgba(88, 175, 223, 0.3);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #bcc1cd;
+    border-radius: 8px;
+    border: 4px solid #fff;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #99a1b3;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  p > code,
+  li > code,
+  td code,
+  h1 > code,
+  h2 > code,
+  h3 > code {
+    background-color: rgba(153, 161, 179, 0.08);
+    color: #404756;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-family: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo,
+      Consolas, monospace;
+    font-size: 0.875em;
+  }
+}
+
+@layer components {
+  .background-grid {
+    background-image: linear-gradient(
+        to right,
+        #343a46 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, #343a46 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .background-grid-fade {
+    background-image: linear-gradient(
+        to right,
+        rgba(52, 58, 70, 0.4) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, rgba(52, 58, 70, 0.4) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .docs-anchor {
+    @apply text-link hover:underline;
+    scroll-margin-top: 6rem;
+  }
+
+  .heading-anchor-link {
+    @apply opacity-0 transition-opacity text-link hover:opacity-100;
+  }
+}
+
+/* Syntax highlighting — GitHub Primer "light" inspired, matching react.dev's light code theme */
+.tok-comment {
+  color: #6e7781;
+  font-style: italic;
+}
+
+.tok-string {
+  color: #0a3069;
+}
+
+.tok-keyword {
+  color: #cf222e;
+}
+
+.tok-number {
+  color: #0550ae;
+}
+
+.tok-function {
+  color: #8250df;
+}
+
+.tok-variable {
+  color: #24292f;
+}
+
+.tok-type {
+  color: #0550ae;
+}
+
+.tok-property {
+  color: #0550ae;
+}
+
+.tok-operator {
+  color: #cf222e;
+}
+
+/* Footer grid */
+.footer-grid {
+  background-image: linear-gradient(to right, #343a46 1px, transparent 1px),
+    linear-gradient(to bottom, #343a46 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-400%);
+  }
+}
+
+@keyframes marquee2 {
+  0% {
+    transform: translateX(400%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+.animate-marquee2 {
+  animation: marquee2 40s linear infinite;
+}

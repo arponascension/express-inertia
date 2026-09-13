@@ -179,13 +179,13 @@ import vue from '@vitejs/plugin-vue';
 import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
 
 export default defineConfig({
-  plugins: [vue(), inertiaVitePlugin()],
-  base: '/build/',
-  build: { manifest: true, outDir: 'public/build' },
+  plugins: [vue(), inertiaVitePlugin({ input: 'src/main.ts', refresh: true })],
 });
 ```
 
-Start Express and Vite in separate terminals during development; `inertiaVitePlugin()` writes `public/hot` so the EJS root view automatically uses the Vite dev server. Run `vite build` before production deployment to write `public/build/.vite/manifest.json`.
+Start Express and Vite in separate terminals during development; `inertiaVitePlugin()` writes `public/hot` so the EJS root view automatically uses the Vite dev server.
+
+When an `input` is provided, the plugin **auto-configures the production build**: it sets `build.manifest`, `build.outDir` (default `public/build`), `build.rollupOptions.input`, and a command-aware `base` (root-relative in dev, `/build/` at build time) — so `vite build` emits `public/build/.vite/manifest.json` ready for Express with **zero manual Vite config**. The `refresh: true` option makes the browser full-reload when an EJS view under `views/` changes.
 
 ## Using Inertia.js with React
 
@@ -218,9 +218,7 @@ import react from '@vitejs/plugin-react';
 import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
 
 export default defineConfig({
-  plugins: [react(), inertiaVitePlugin()],
-  base: '/build/',
-  build: { manifest: true, outDir: 'public/build' },
+  plugins: [react(), inertiaVitePlugin({ input: 'src/main.tsx', refresh: true })],
 });
 ```
 
@@ -254,11 +252,38 @@ registerDirective('uppercase', (args) => `<%= (${args}).toUpperCase() %>`);
 
 ## Vite Integration for Express
 
-Auto-detects the Vite dev server via the hot file (`public/hot`) and reads `manifest.json` in production:
+Auto-detects the Vite dev server via the hot file (`public/hot`) and reads `manifest.json` in production.
+
+### Zero-config: `inertiaVitePlugin({ input, refresh })`
+
+The recommended setup requires nothing but your client entrypoint:
 
 ```ts
-app.use(
-  inertia({
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { inertiaVitePlugin } from '@arponascension/express-inertia/vite';
+
+export default defineConfig({
+  plugins: [react(), inertiaVitePlugin({ input: 'src/main.tsx', refresh: true })],
+});
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `input` | `string \| string[]` | — | Client entrypoint(s) for the build. When set, the plugin auto-configures the build: enables `build.manifest`, builds into `public/{buildDirectory}`, registers `build.rollupOptions.input`, and uses a command-aware `base` (root in dev, `/{buildDirectory}/` at build time so hashed asset URLs resolve against the Express static mount). |
+| `refresh` | `boolean \| string \| string[]` | `false` | Auto full-page reload when a server-rendered template changes. `true` watches `views/**/*.ejs`; a glob string or array watches custom paths relative to the project root. |
+| `buildDirectory` | `string` | `'build'` | Directory inside `public/` that Vite builds into. |
+| `hotFile` | `string` | `'public/hot'` | Hot file written by the plugin in dev mode. |
+| `devServerUrl` | `string` | resolved dev URL | Override for the URL written to the hot file. |
+
+### Manual asset resolution
+
+If you prefer to configure the build or engine yourself, the `vite` option on `createInertiaEngine()` (or the `inertia()` middleware, which is ignored there and only consumed by the engine) still gives you full control:
+
+```ts
+app.engine(
+  'ejs',
+  createInertiaEngine({
     vite: {
       publicDir: 'public',
       buildDir: 'build',
@@ -269,6 +294,20 @@ app.use(
   })
 );
 ```
+
+> For that manual route, configure the build yourself — and use a command-aware `base` (a static `base: '/build/'` would make the Vite dev server serve modules under `/build/`, breaking dev HMR):
+>
+> ```ts
+> export default defineConfig(({ command }) => ({
+>   plugins: [react(), inertiaVitePlugin()],
+>   base: command === 'build' ? '/build/' : '/',
+>   build: {
+>     manifest: true,
+>     outDir: 'public/build',
+>     rollupOptions: { input: 'src/main.tsx' },
+>   },
+> }));
+> ```
 
 ### Prefetch and preload helpers
 
@@ -599,7 +638,7 @@ const delay = calculateBackoff(attempt, 200, 2000);
 | Export | Description |
 |---|---|
 | `createViteHelper(config?)` | Vite asset resolver |
-| `inertiaVitePlugin(opts?)` | Auto write/remove the Vite hot file |
+| `inertiaVitePlugin(opts?)` | Vite plugin — hot file + auto build config (`input`, `refresh`, `buildDirectory`) |
 | `createPrefetchHelper(viteHelper)` | Prefetch/preload tag generator |
 
 ---

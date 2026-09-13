@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { createViteHelper, inertiaVitePlugin } from '../src/vite.js';
 import fs from 'fs';
 import path from 'path';
@@ -215,5 +216,102 @@ describe('inertiaVitePlugin', () => {
     // Simulate the dev server shutting down (removes the hot file).
     closeCb();
     expect(fs.existsSync(hotFile)).toBe(false);
+  });
+
+  it('auto-configures the production build when input is provided', () => {
+    const plugin = inertiaVitePlugin({ input: 'src/main.tsx' });
+    const config: any = { root: testDir };
+
+    plugin.config?.(config, { command: 'build' });
+
+    expect(config.base).toBe('/build/');
+    expect(config.build.manifest).toBe(true);
+    expect(config.build.outDir).toBe(path.resolve(testDir, 'public', 'build'));
+    expect(config.build.rollupOptions.input).toBe('src/main.tsx');
+  });
+
+  it('supports multiple build inputs and a custom build directory', () => {
+    const plugin = inertiaVitePlugin({
+      input: ['src/main.tsx', 'src/style.css'],
+      buildDirectory: 'dist-build',
+    });
+    const config: any = { root: testDir };
+
+    plugin.config?.(config, { command: 'build' });
+
+    expect(config.base).toBe('/dist-build/');
+    expect(config.build.outDir).toBe(path.resolve(testDir, 'public', 'dist-build'));
+    expect(config.build.rollupOptions.input).toEqual(['src/main.tsx', 'src/style.css']);
+  });
+
+  it('uses a root base during serve and leaves build config untouched', () => {
+    const plugin = inertiaVitePlugin({ input: 'src/main.tsx' });
+    const config: any = { root: testDir };
+
+    plugin.config?.(config, { command: 'serve' });
+
+    expect(config.base).toBe('/');
+    expect(config.build).toBeUndefined();
+  });
+
+  it('keeps an explicitly configured base during build', () => {
+    const plugin = inertiaVitePlugin({ input: 'src/main.tsx' });
+    const config: any = { root: testDir, base: '/assets/', build: { outDir: 'dist' } };
+
+    plugin.config?.(config, { command: 'build' });
+
+    expect(config.base).toBe('/assets/');
+    expect(config.build.outDir).toBe('dist');
+    expect(config.build.rollupOptions.input).toBe('src/main.tsx');
+  });
+
+  describe('refresh option', () => {
+    it('full-reloads the browser when a watched view file changes, ignoring source files', () => {
+      const watcher = new EventEmitter() as any;
+      watcher.add = () => {};
+      const sent: any[] = [];
+      const server = {
+        config: { root: testDir },
+        watcher,
+        ws: { send: (msg: any) => sent.push(msg) },
+        httpServer: undefined,
+      };
+
+      fs.mkdirSync(path.join(testDir, 'views'), { recursive: true });
+      fs.mkdirSync(path.join(testDir, 'src'), { recursive: true });
+
+      const plugin = inertiaVitePlugin({ refresh: true });
+      plugin.configureServer?.(server as any);
+
+      watcher.emit('change', path.join(testDir, 'views', 'base.ejs'));
+      expect(sent).toEqual([{ type: 'full-reload' }]);
+
+      watcher.emit('add', path.join(testDir, 'views', 'partial', 'header.ejs'));
+      expect(sent).toHaveLength(2);
+
+      watcher.emit('change', path.join(testDir, 'src', 'main.tsx'));
+      expect(sent).toHaveLength(2);
+    });
+
+    it('uses custom glob patterns when provided', () => {
+      const watcher = new EventEmitter() as any;
+      watcher.add = () => {};
+      const sent: any[] = [];
+      const server = {
+        config: { root: testDir },
+        watcher,
+        ws: { send: (msg: any) => sent.push(msg) },
+        httpServer: undefined,
+      };
+
+      const plugin = inertiaVitePlugin({ refresh: ['templates/*.ejs'] });
+      plugin.configureServer?.(server as any);
+
+      watcher.emit('change', path.join(testDir, 'templates', 'layout.ejs'));
+      expect(sent).toEqual([{ type: 'full-reload' }]);
+
+      watcher.emit('change', path.join(testDir, 'views', 'base.ejs'));
+      expect(sent).toHaveLength(1);
+    });
   });
 });

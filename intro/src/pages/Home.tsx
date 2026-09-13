@@ -492,7 +492,9 @@ createInertiaApp({
           <Para>
             First-class Vite support out of the box. In development, a hot file
             signals the dev server for instant HMR; in production, assets are
-            resolved from the Vite manifest with SRI hashing available.
+            resolved from the Vite manifest with SRI hashing available. Pass{' '}
+            <code>input</code> and the plugin configures the production build
+            for you — no Vite boilerplate required.
           </Para>
         </Center>
         <ExampleLayout
@@ -504,7 +506,7 @@ import react from '@vitejs/plugin-react'
 import { inertiaVitePlugin } from '@arponascension/express-inertia/vite'
 
 export default defineConfig({
-  plugins: [react(), inertiaVitePlugin()],
+  plugins: [react(), inertiaVitePlugin({ input: 'src/main.tsx', refresh: true })],
 })`}
             </CodeBlock>
           }

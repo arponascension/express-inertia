@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-09-13
+
+### Added
+
+- `inertiaVitePlugin({ input, refresh, buildDirectory })` zero-config build support:
+  - `input` auto-configures the production build (manifest, `public/{buildDirectory}`
+    outDir, entrypoint, and a command-aware base — root in dev, `/{buildDirectory}/`
+    at build time), so a minimal `vite.config.ts` needs only the framework plugin and
+    `inertiaVitePlugin({ input })`.
+  - `refresh` (boolean | string | string[]) watches server-rendered templates (default
+    `views/**/*.ejs`) and triggers an automatic full-page reload in the browser; source
+    files keep normal HMR.
+
+### Changed
+
+- `inertiaVitePlugin` now exposes a `config()` hook (Vite Plugin API) used to apply
+  the build defaults above; it never overrides an explicitly configured `base`,
+  `outDir`, manifest setting, or `rollupOptions.input`.
+
 ## [1.5.1] - 2026-09-10
 
 ### Changed

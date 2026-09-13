@@ -18,6 +18,26 @@ export interface InertiaVitePluginOptions {
    * Defaults to the resolved Vite dev server URL.
    */
   devServerUrl?: string;
+  /**
+   * Client entrypoint(s) for the build (e.g. `'src/main.tsx'` or `['src/main.tsx', 'src/style.css']`).
+   * When provided, the plugin configures the production build automatically:
+   * enables the manifest, builds into `public/{buildDirectory}`, registers the
+   * entrypoint(s), and uses a command-aware base (root in dev, `/{buildDirectory}/`
+   * at build time so hashed asset URLs resolve against the public build mount).
+   */
+  input?: string | string[];
+  /**
+   * Auto full-page reload when server-rendered template files change.
+   * - `true`: watch the project's `views` directory for `.ejs` files
+   * - string or string[]: custom glob pattern(s) relative to the project root
+   * @default false
+   */
+  refresh?: boolean | string | string[];
+  /**
+   * Directory inside `public/` that Vite builds into when `input` is set.
+   * @default 'build'
+   */
+  buildDirectory?: string;
 }
 
 /**
@@ -26,9 +46,63 @@ export interface InertiaVitePluginOptions {
  */
 export interface InertiaVitePlugin {
   name: string;
+  config?: (config: any, env: { command: 'build' | 'serve' }) => void;
   configResolved?: (config: any) => void;
   configureServer?: (server: any) => void;
   buildStart?: () => void;
+}
+
+/**
+ * Converts a glob pattern (with `**`, `*` and `?` support) into a RegExp that
+ * matches POSIX-style relative paths. `**` (globstar) may span path separators.
+ */
+function globToRegExp(glob: string): RegExp {
+  const normalized = glob.replace(/\\/g, '/');
+  let source = '';
+  let i = 0;
+  const escape = (ch: string) => ch.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+
+  while (i < normalized.length) {
+    const ch = normalized[i];
+    if (ch === '*') {
+      if (normalized[i + 1] === '*') {
+        // Globstar: '**/' can match zero or more path segments (including none).
+        if (normalized[i + 2] === '/') {
+          source += '(?:.*/)?';
+          i += 3;
+        } else {
+          source += '.*';
+          i += 2;
+        }
+      } else {
+        source += '[^/]*';
+        i += 1;
+      }
+    } else if (ch === '?') {
+      source += '[^/]';
+      i += 1;
+    } else {
+      source += escape(ch);
+      i += 1;
+    }
+  }
+
+  return new RegExp(`^${source}$`);
+}
+
+/**
+ * Normalizes the `refresh` option into an array of glob patterns (or null when disabled).
+ */
+function normalizeRefreshGlobs(
+  refresh: InertiaVitePluginOptions['refresh']
+): string[] | null {
+  if (refresh === undefined || refresh === false) {
+    return null;
+  }
+  if (refresh === true) {
+    return ['views/**/*.ejs'];
+  }
+  return Array.isArray(refresh) ? refresh : [refresh];
 }
 
 /**
@@ -71,6 +145,8 @@ export function inertiaVitePlugin(options: InertiaVitePluginOptions = {}): Inert
   const logger = createLogger({ prefix: 'express-inertia:vite' });
   let cleanupRegistered = false;
   let exitConfig: any = null;
+  const buildDirectory = options.buildDirectory || 'build';
+
   const write = (config: any, server?: any) => {
     try {
       const hotFile = path.resolve(config.root, options.hotFile || 'public/hot');
@@ -98,8 +174,63 @@ export function inertiaVitePlugin(options: InertiaVitePluginOptions = {}): Inert
     }
   };
 
+  const installRefresh = (server: any) => {
+    const refreshGlobs = normalizeRefreshGlobs(options.refresh);
+    if (!refreshGlobs) {
+      return;
+    }
+
+    const root = server.config.root;
+    const matchers = refreshGlobs.map(globToRegExp);
+    const matches = (file: string) => {
+      const rel = path.relative(root, file).split(path.sep).join('/');
+      return matchers.some((re) => re.test(rel));
+    };
+
+    const onFileEvent = (file: string) => {
+      if (file && matches(file)) {
+        server.ws.send({ type: 'full-reload' });
+      }
+    };
+
+    try {
+      server.watcher.add(refreshGlobs);
+    } catch (err) {
+      logger.warn('Failed to watch refresh paths', { error: (err as Error).message });
+    }
+    server.watcher.on('change', onFileEvent);
+    server.watcher.on('add', onFileEvent);
+    server.watcher.on('unlink', onFileEvent);
+  };
+
   return {
     name: 'express-inertia-hot-file',
+
+    config(config, env) {
+      // Auto-configure the production build when an entry point is provided, so callers
+      // only need `inertiaVitePlugin({ input, refresh })` — no manual base/vitejs config.
+      if (options.input) {
+        if (config.base === undefined) {
+          config.base = env.command === 'build' ? `/${buildDirectory}/` : '/';
+        }
+        if (env.command === 'build') {
+          if (config.publicDir === undefined || config.publicDir === 'public') {
+            config.publicDir = false;
+          }
+          if (config.build === undefined) {
+            config.build = {};
+          }
+          if (config.build.manifest !== false) {
+            config.build.manifest = true;
+          }
+          if (config.build.outDir === undefined) {
+            config.build.outDir = path.resolve(config.root || process.cwd(), 'public', buildDirectory);
+          }
+          config.build.rollupOptions = config.build.rollupOptions || {};
+          config.build.rollupOptions.input = config.build.rollupOptions.input || options.input;
+        }
+      }
+    },
 
     configResolved(config) {
       if (config.command === 'build') {
@@ -118,6 +249,7 @@ export function inertiaVitePlugin(options: InertiaVitePluginOptions = {}): Inert
         process.once('exit', removeOnExit);
         cleanupRegistered = true;
       }
+      installRefresh(server);
     },
 
     buildStart() {

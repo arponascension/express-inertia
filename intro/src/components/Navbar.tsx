@@ -80,7 +80,7 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
             rel="noopener noreferrer"
             className="inline-flex items-center rounded-full border border-border px-3 py-1.5 text-xs font-medium leading-none text-secondary transition-colors hover:border-gray-30 hover:text-primary"
           >
-            v1.5.1
+            v1.5.2
           </a>
           <a
             href="https://github.com/arponascension/express-inertia"

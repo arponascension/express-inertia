@@ -259,7 +259,20 @@ export default function ApiReference() {
         />
         <Signature
           signature="inertiaVitePlugin(options?: InertiaVitePluginOptions): InertiaVitePlugin"
-          description="Vite plugin that writes/removes the hot file for dev-server detection."
+          description="Vite plugin that writes/removes the hot file for dev-server detection and can auto-configure the production build and watch templates."
+        />
+        <h3 className="mb-3 mt-8 font-display text-2xl font-semibold text-primary">
+          InertiaVitePluginOptions
+        </h3>
+        <OptionTable
+          headings={['Option', 'Default', 'Description']}
+          rows={[
+            ['hotFile', code('"public/hot"'), 'Hot file path (relative paths resolve against the project root)'],
+            ['devServerUrl', code('resolved'), 'Override the dev-server URL written to the hot file'],
+            ['input', code('undefined'), 'Client entrypoint(s): string or string[]. When set, the plugin enables the manifest, builds into public/{buildDirectory}, registers the entrypoint, and uses a command-aware base (root in dev, /{buildDirectory}/ at build time)'],
+            ['refresh', code('false'), 'Full-page reload on template changes. true watches views/**/*.ejs; a glob string or array watches custom paths'],
+            ['buildDirectory', code('"build"'), 'Directory inside public/ that Vite builds into when input is set'],
+          ]}
         />
         <h3 className="mb-3 mt-8 font-display text-2xl font-semibold text-primary">
           ViteHelper methods

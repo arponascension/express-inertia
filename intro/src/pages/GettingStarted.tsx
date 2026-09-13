@@ -187,8 +187,10 @@ createInertiaApp({
 
         <H2 id="vite">Vite integration</H2>
         <P>
-          For Vite dev HMR and production asset resolution, add the Inertia
-          plugin to your Vite config:
+          For Vite dev HMR, production asset resolution, and a zero-config
+          production build, add the Inertia plugin to your Vite config. Pass
+          your client entrypoint via <code>input</code> and enable full-page
+          reloads on .ejs template edits with <code>refresh: true</code>:
         </P>
         <CodeBlock filename="vite.config.ts" showLineNumbers>
 {`import { defineConfig } from 'vite'
@@ -196,12 +198,16 @@ import react from '@vitejs/plugin-react'
 import { inertiaVitePlugin } from '@arponascension/express-inertia/vite'
 
 export default defineConfig({
-  plugins: [react(), inertiaVitePlugin()],
+  plugins: [react(), inertiaVitePlugin({ input: 'src/app.tsx', refresh: true })],
 })`}
         </CodeBlock>
         <P>
-          Tune asset resolution in the engine — the middleware itself does not
-          read the <code>vite</code> option:
+          When <code>input</code> is provided, the plugin auto-configures the
+          build for you: it enables the manifest, builds into{' '}
+          <code>public/build</code>, registers the entrypoint, and uses a
+          command-aware base (root in dev, <code>/build/</code> at build time).
+          You only need to tune the asset resolution in the engine if you use
+          a custom layout — defaults match the plugin output:
         </P>
         <CodeBlock filename="app.js">
 {`app.engine('ejs', createInertiaEngine({
@@ -216,7 +222,10 @@ export default defineConfig({
         <Callout type="note">
           In development, <code>inertiaVitePlugin()</code> writes a{' '}
           <code>hot</code> file that signals the Vite dev server. In
-          production, assets are resolved from the build manifest instead.
+          production, assets are resolved from the build manifest instead. With{' '}
+          <code>refresh: true</code> (the default glob is{' '}
+          <code>views/**/*.ejs</code>), editing an EJS template triggers an
+          instant full-page reload.
         </Callout>
 
         <H2 id="versioning">Asset versioning</H2>

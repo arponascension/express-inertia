@@ -444,16 +444,15 @@ import react from '@vitejs/plugin-react'
 import { inertiaVitePlugin } from '@arponascension/express-inertia/vite'
 
 export default defineConfig({
-  plugins: [react(), inertiaVitePlugin()],
-  base: '/build/',
-  build: {
-    manifest: true,
-    outDir: 'public/build',
-    emptyOutDir: true,
-    rollupOptions: { input: 'resources/js/app.tsx' },
-  },
+  plugins: [react(), inertiaVitePlugin({ input: 'resources/js/app.tsx', refresh: true })],
 })`}
         </CodeBlock>
+        <P>
+          The <code>input</code> option auto-configures the production build
+          (manifest, <code>public/build</code> outDir, entrypoint, and
+          command-aware base), and <code>refresh: true</code> full-reloads the
+          browser whenever an EJS view under <code>views/</code> changes.
+        </P>
 
         <H2 id="run">Run the app</H2>
         <P>Start both servers:</P>

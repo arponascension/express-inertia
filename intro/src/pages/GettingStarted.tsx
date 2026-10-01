@@ -88,7 +88,7 @@ const { inertia } = require('@arponascension/express-inertia')
 
 const app = express()
 
-// 1. Register the EJS engine with Blade directive support
+// 1. Register the EJS view engine
 app.engine('ejs', createInertiaEngine())
 app.set('view engine', 'ejs')   // let res.render('base') resolve views/base.ejs
 app.set('views', 'views')       // template directory
@@ -108,9 +108,9 @@ app.listen(3000)`}
         </CodeBlock>
 
         <Callout type="note">
-          <code>createInertiaEngine()</code> compiles Blade-style directives
-          like <code>@inertia</code>, <code>@vite</code>, and <code>@csrf</code>{' '}
-          into EJS syntax automatically.
+          <code>createInertiaEngine()</code> renders plain EJS and exposes the
+          Inertia helpers <code>inertia()</code>, <code>vite()</code>, and{' '}
+          <code>csrf()</code> as template locals.
         </Callout>
 
         <H2 id="root-view">Root view template</H2>
@@ -127,16 +127,16 @@ app.listen(3000)`}
   <title>My App</title>
 
   <!-- Vite asset tags (dev HMR or production manifest) -->
-  @vite('src/app.tsx')
+  <%- vite('src/app.tsx') %>
 </head>
 <body>
   <!-- Inertia root element + page data -->
-  @inertia
+  <%- inertia() %>
 </body>
 </html>`}
         </CodeBlock>
         <P>
-          The <code>@inertia</code> directive renders the root{' '}
+          The <code>inertia()</code> helper renders the root{' '}
           <code>&lt;div&gt;</code> element and embeds the page data as a JSON
           script tag.
         </P>

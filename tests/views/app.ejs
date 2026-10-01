@@ -2,10 +2,10 @@
 <html>
 <head>
   <title inertia>Test App</title>
-  @inertiaHead
-  @vite('src/app.js')
+  <%- inertiaHead() %>
+  <%- vite('src/app.js') %>
 </head>
 <body>
-  @inertia
+  <%- inertia() %>
 </body>
 </html>

@@ -188,7 +188,7 @@ function TemplatePreview() {
         </h1>
         <p className="text-sm text-secondary">This HTML was rendered by the root view.</p>
         <div className="mt-6 rounded-xl bg-highlight p-4 font-mono text-xs text-secondary">
-          <span className="text-link">@inertia</span> → &lt;div id="app"&gt; + JSON script tag
+          <span className="text-link">{'<%- inertia() %>'}</span> → &lt;div id="app"&gt; + JSON script tag
         </div>
       </div>
     </BrowserChrome>
@@ -399,17 +399,17 @@ router.get('/users/:id', async (req, res) => {
         </Center>
       </Section>
 
-      {/* 2 — Blade templates */}
+      {/* 2 — EJS templates */}
       <Section background="right">
         <Center>
-          <Header>Write views with Blade templates</Header>
+          <Header>Write views with native EJS</Header>
           <Para>
-            Your root view is a single EJS template enriched with Blade-style
-            directives. <code className="font-mono text-sm">@inertia</code>{' '}
-            embeds the page data,{' '}
-            <code className="font-mono text-sm">@vite</code> renders dev HMR or
-            production tags, <code className="font-mono text-sm">@csrf</code>{' '}
-            injects a hidden CSRF field — all compiled to plain EJS for you.
+            Your root view is a plain EJS template. The{' '}
+            <code className="font-mono text-sm">inertia()</code> helper embeds
+            the page data, <code className="font-mono text-sm">vite()</code>{' '}
+            renders dev HMR or production tags, and{' '}
+            <code className="font-mono text-sm">csrf()</code> injects a hidden
+            CSRF field.
           </Para>
         </Center>
         <ExampleLayout
@@ -423,11 +423,11 @@ router.get('/users/:id', async (req, res) => {
   <title>My App</title>
 
   <!-- Dev HMR or production manifest -->
-  @vite('resources/js/app.tsx')
+  <%- vite('resources/js/app.tsx') %>
 </head>
 <body>
   <!-- Root element + JSON page data -->
-  @inertia
+  <%- inertia() %>
 </body>
 </html>`}
             </CodeBlock>
@@ -436,9 +436,9 @@ router.get('/users/:id', async (req, res) => {
         />
         <Center>
           <Para>
-            This markup syntax is called Blade — it keeps the HTML close to
-            server-side concerns like asset tags, CSRF, and Ziggy routes, so
-            your client code stays focused on components.
+            These helpers keep the HTML close to server-side concerns like
+            asset tags, CSRF, and Ziggy routes, so your client code stays
+            focused on components.
           </Para>
         </Center>
       </Section>
@@ -548,7 +548,7 @@ export default defineConfig({
             points={[
               'Inertia v2 deferred props load in the background',
               'Merge and lazy prop helpers for partial reloads',
-              'Server-rendered head tags via @inertiaHead',
+              'Server-rendered head tags via inertiaHead()',
             ]}
           />
         </div>

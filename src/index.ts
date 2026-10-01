@@ -22,12 +22,6 @@ export {
 } from './vite.js';
 
 export {
-  compileBladeDirectives,
-  registerDirective,
-  clearCustomDirectives,
-} from './directives.js';
-
-export {
   lazy,
   always,
   defer,
@@ -87,8 +81,7 @@ export type {
   SSROptions,
   SSRResult,
   ViteConfig,
-  DirectiveHandler,
-  BladeEngineOptions,
+  InertiaEngineOptions,
   LazyProp,
   AlwaysProp,
   DeferredProp,

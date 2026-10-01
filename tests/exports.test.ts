@@ -68,10 +68,7 @@ describe('package entry point exports', () => {
     expect(pkg.defaultViteHelper).toBeDefined();
   });
 
-  it('exposes the directives and prefetch APIs', () => {
-    expect(typeof pkg.compileBladeDirectives).toBe('function');
-    expect(typeof pkg.registerDirective).toBe('function');
-    expect(typeof pkg.clearCustomDirectives).toBe('function');
+  it('exposes the prefetch API', () => {
     expect(typeof pkg.createPrefetchHelper).toBe('function');
     expect(typeof pkg.PrefetchHelper).toBe('function');
   });

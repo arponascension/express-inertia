@@ -209,7 +209,7 @@ export interface InertiaOptions {
    */
   inertiaVersion?: 1 | 2;
   /**
-   * Whether @inertia should automatically render the root container `<div id="app"></div>`.
+   * Whether `inertia()` should automatically render the root container `<div id="app"></div>`.
    * Set to `false` if you write `<div id="app"></div>` manually in your root template.
    * @default true
    */
@@ -341,28 +341,19 @@ export interface InertiaRequestHelper {
 }
 
 /**
- * Custom Blade Directive Handler.
+ * Custom View Engine Options for the Inertia EJS engine.
  */
-export type DirectiveHandler = (args: string, locals: Record<string, any>) => string;
-
-/**
- * Custom View Engine Options for Blade EJS.
- */
-export interface BladeEngineOptions {
+export interface InertiaEngineOptions {
   /**
    * Enable template caching.
    * Defaults to true when the Vite dev server is not running (i.e. build mode),
-   * matching the same auto-detection as the `@vite` directive.
+   * matching the same auto-detection as the `vite()` helper.
    */
   cache?: boolean;
   /**
    * Vite helper configuration.
    */
   vite?: ViteConfig;
-  /**
-   * Custom Blade directives.
-   */
-  directives?: Record<string, DirectiveHandler>;
   /**
    * Inertia protocol version for initial HTML payload (1 or 2).
    * @default 2
@@ -381,7 +372,7 @@ export interface BladeEngineOptions {
   templateSource?: string;
   /**
    * Custom template compiler. Receives the raw template source and returns a compiled EJS string.
-   * Useful for custom preprocessing before Blade directive compilation.
+   * Useful for custom preprocessing before EJS compilation.
    */
   compileTemplate?: (source: string) => string;
 }

@@ -41,7 +41,7 @@ describe('Vue Inertia client protocol integration', () => {
         createInertiaApp({ resolve: (name) => import('./Pages/' + name + '.vue'),
           setup: ({ el, App, props, plugin }) => createApp({ render: () => h(App, props) }).use(plugin).mount(el) });`);
       fs.writeFileSync(path.join(fixture, 'src', 'Pages', 'Home.vue'), '<template><main>{{ message }}</main></template><script setup lang="ts">defineProps<{ message: string }>()</script>');
-      fs.writeFileSync(path.join(fixture, 'views', 'app.ejs'), '<!doctype html><html><head>@vite(\'src/main.ts\')</head><body>@inertia</body></html>');
+      fs.writeFileSync(path.join(fixture, 'views', 'app.ejs'), '<!doctype html><html><head><%- vite(\'src/main.ts\') %></head><body><%- inertia() %></body></html>');
       fs.writeFileSync(path.join(fixture, 'vite.config.mjs'), `
         import { defineConfig } from 'vite'; import vue from '@vitejs/plugin-vue';
         export default defineConfig({ plugins: [vue()], base: '/build/', publicDir: false,

@@ -122,10 +122,10 @@ export default function Ssr() {
             serialized page data.
           </Item>
           <Item>
-            In the root template, the <code className="text-link">@inertia</code>{' '}
-            directive detects <code className="text-link">data-server-rendered</code> and
+            In the root template, the <code className="text-link">inertia()</code>{' '}
+            helper detects <code className="text-link">data-server-rendered</code> and
             passes the body through untouched, while{' '}
-            <code className="text-link">@inertiaHead</code> injects the{' '}
+            <code className="text-link">inertiaHead()</code> injects the{' '}
             <code className="text-link">head</code> tags.
           </Item>
         </ol>
@@ -319,23 +319,23 @@ app.use(inertia({
         <H2 id="head">Meta tags, titles &amp; Open Graph</H2>
         <P>
           Render the SSR head tags in the root template with the{' '}
-          <code className="text-link">@inertiaHead</code> directive:
+          <code className="text-link">inertiaHead()</code> helper:
         </P>
         <CodeBlock filename="views/base.ejs" showLineNumbers>
 {`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  @inertiaHead
-  @vite('resources/js/app.tsx')
+  <%- inertiaHead() %>
+  <%- vite('resources/js/app.tsx') %>
 </head>
 <body>
-  @inertia
+  <%- inertia() %>
 </body>
 </html>`}
         </CodeBlock>
         <P>
-          <code className="text-link">@inertiaHead</code> outputs the{' '}
+          <code className="text-link">inertiaHead()</code> outputs the{' '}
           <code className="text-link">ssr.head</code> array the SSR server returned,
           one tag per line. In React those tags come from the{' '}
           <code className="text-link">title</code> callback on{' '}
@@ -361,8 +361,8 @@ export default function Product({ product }) {
   )
 }`}
         </CodeBlock>
-        <Callout type="pitfall" title="@inertiaHead needs SSR">
-          Without SSR, <code className="text-link">@inertiaHead</code> renders an
+        <Callout type="pitfall" title="inertiaHead() needs SSR">
+          Without SSR, <code className="text-link">inertiaHead()</code> renders an
           empty string — meta tags then exist only in the browser DOM after the
           client starts. Any page that must be index-friendly should go through
           the SSR path.
@@ -464,9 +464,9 @@ app.get('/robots.txt', (req, res) => {
               <td className="py-3 pr-4 align-top font-medium text-primary">Rendered HTML has no styles</td>
               <td className="py-3 align-top text-secondary">
                 The SSR body contains markup only; keep{' '}
-                <code className="text-link">@vite('resources/js/app.tsx')</code>{' '}
+                <code className="text-link">vite('resources/js/app.tsx')</code>{' '}
                 in <code className="text-link">{'<head>'}</code> beside{' '}
-                <code className="text-link">@inertiaHead</code>.
+                <code className="text-link">inertiaHead()</code>.
               </td>
             </tr>
             <tr>

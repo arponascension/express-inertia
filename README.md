@@ -8,7 +8,7 @@
 
 **@arponascension/express-inertia** is a production-ready **Inertia.js adapter for Express.js**. It brings the official [Inertia.js](https://inertiajs.com) protocol to **Node.js and Express** apps so you can build modern **single-page applications (SPAs)** with **Vue 3**, **React**, or **Svelte** using classic server-side routing and controllers — without the complexity of a REST API or a client-side router.
 
-It ships with a **Blade-style EJS template engine**, **zero-config Vite** integration (HMR in development, hashed `manifest.json` in production), **server-side rendering (SSR)** with circuit-breaker resilience, **security hardening**, **edge-runtime support** (Cloudflare Workers, Vercel Edge, Netlify Edge), and **first-class TypeScript** types — all in a tree-shakeable ~40KB bundle.
+It ships with a **native EJS template engine** with Inertia/Vite helpers, **zero-config Vite** integration (HMR in development, hashed `manifest.json` in production), **server-side rendering (SSR)** with circuit-breaker resilience, **security hardening**, **edge-runtime support** (Cloudflare Workers, Vercel Edge, Netlify Edge), and **first-class TypeScript** types — all in a tree-shakeable ~40KB bundle.
 
 > New to Inertia.js? Read [What is Inertia.js?](#what-is-inertiajs) or the [official documentation](https://inertiajs.com/docs).
 
@@ -22,7 +22,7 @@ It ships with a **Blade-style EJS template engine**, **zero-config Vite** integr
 - [Installation](#installation)
 - [Quick Start: Express + Inertia + Vue 3](#quick-start-express--inertia--vue-3)
 - [Using Inertia.js with React](#using-inertiajs-with-react)
-- [Blade-style EJS Directives for Express](#blade-style-ejs-directives-for-express)
+- [EJS Template Helpers for Express](#ejs-template-helpers-for-express)
 - [Vite Integration for Express](#vite-integration-for-express)
 - [Server-Side Rendering (SSR) for SEO](#server-side-rendering-ssr-for-seo)
 - [Response API: `res.inertia()`](#response-api-resinertia)
@@ -60,7 +60,7 @@ Inertia requests return plain JSON to the client (no full page reloads); real fu
 
 | Feature | What you get |
 |---|---|
-| **Blade-style EJS directives** | Write Laravel Blade syntax (`@inertia`, `@vite`, `@csrf`, `@inertiaHead`) directly inside `.ejs` templates |
+| **Native EJS template helpers** | Call `<%- inertia() %>`, `<%- vite('src/main.ts') %>`, `<%- csrf() %>`, and `<%- inertiaHead() %>` directly inside `.ejs` templates |
 | **Zero-config Vite integration** | Automatic HMR in development; hashed `manifest.json` asset resolution in production |
 | **Server-side rendering (SSR)** | Express + Inertia SSR endpoint proxying with retry/backoff and **circuit breaker** fallback to client rendering |
 | **Security hardening** | Component name validation against path traversal, `viewData` sanitization, SRI hash generation |
@@ -107,7 +107,7 @@ import { inertia, createInertiaEngine } from '@arponascension/express-inertia';
 
 const app = express();
 
-// Blade-compatible EJS view engine for Express
+// EJS view engine with Inertia/Vite helpers for Express
 app.engine('ejs', createInertiaEngine());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -147,12 +147,12 @@ app.listen(3000, () => console.log('Server running on http://localhost:3000'));
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title inertia><%= page?.props?.title || 'App' %></title>
 
-    @inertiaHead
-    @vite('src/main.ts')
+    <%- inertiaHead() %>
+    <%- vite('src/main.ts') %>
   </head>
   <body>
-    @inertia
-    @csrf
+    <%- inertia() %>
+    <%- csrf() %>
   </body>
 </html>
 ```
@@ -203,11 +203,11 @@ createInertiaApp({
 });
 ```
 
-For React, use a `.tsx` entrypoint in the root view and include `@viteReactRefresh` before `@vite`:
+For React, use a `.tsx` entrypoint in the root view and include `<%- viteReactRefresh() %>` before `<%- vite('src/main.tsx') %>`:
 
 ```html
-@viteReactRefresh
-@vite('src/main.tsx')
+<%- viteReactRefresh() %>
+<%- vite('src/main.tsx') %>
 ```
 
 Replace the Vue plugin with `@vitejs/plugin-react` in `vite.config.ts` and keep the same `inertiaVitePlugin()`:
@@ -224,29 +224,21 @@ export default defineConfig({
 
 ---
 
-## Blade-style EJS Directives for Express
+## EJS Template Helpers for Express
 
-Write Laravel Blade-style syntax inside EJS templates, powered by a custom Express view engine:
+Call the Inertia and Vite helpers as normal EJS expressions, powered by a custom Express view engine:
 
-| Directive | Component Tag | Output |
-|---|---|---|
-| `@inertia` | `<x-inertia />` | Renders `<div id="app"></div><script data-page="app" type="application/json">` |
-| `@inertia('root')` | `<x-inertia id="root" />` | Custom root ID |
-| `@inertiaScript` | `<x-inertia-script />` | JSON script only (manual root container) |
-| `@inertiaHead` | `<x-inertia-head />` | Injects SSR `<head>` tags |
-| `@vite('src/main.ts')` | `<x-vite src="src/main.ts" />` | Dev HMR or production manifest |
-| `@viteReactRefresh` | `<x-vite-react-refresh />` | React Fast Refresh preamble |
-| `@csrf` | `<x-csrf />` | CSRF hidden input |
-| `@routes` | `<x-routes />` | Ziggy / route definitions |
-| `@json(myVar)` | — | Safely stringifies a JS object |
-
-### Custom directives
-
-```ts
-import { registerDirective } from '@arponascension/express-inertia';
-
-registerDirective('uppercase', (args) => `<%= (${args}).toUpperCase() %>`);
-```
+| EJS helper | Output |
+|---|---|
+| `<%- inertia() %>` | Renders `<div id="app"></div><script data-page="app" type="application/json">` |
+| `<%- inertia('root') %>` | Custom root ID |
+| `<%- inertiaScript() %>` | JSON script only (manual root container) |
+| `<%- inertiaHead() %>` | Injects SSR `<head>` tags |
+| `<%- vite('src/main.ts') %>` | Dev HMR or production manifest |
+| `<%- viteReactRefresh() %>` | React Fast Refresh preamble |
+| `<%- csrf() %>` | CSRF hidden input |
+| `<%- routes() %>` | Ziggy / route definitions |
+| `<%- json(myVar) %>` | Safely stringifies a JS object |
 
 ---
 
@@ -597,7 +589,7 @@ const delay = calculateBackoff(attempt, 200, 2000);
 | `inertia(options?)` | Inertia.js Express middleware factory |
 | `createInertia(options?)` | Same as `inertia`, explicit name |
 | `requestIdMiddleware()` | Assigns `req.id` for log correlation |
-| `createInertiaEngine(options?)` | EJS view engine with Blade support |
+| `createInertiaEngine(options?)` | EJS view engine with Inertia/Vite helpers |
 | `inertiaEngine` | Default engine instance |
 
 ### Prop helpers
@@ -663,7 +655,7 @@ Yes. Enable `ssr: { enabled: true }` and point it at the official Inertia SSR se
 
 ### What template engine does express-inertia use?
 
-EJS, extended with Laravel Blade-style directives (`@inertia`, `@vite`, `@csrf`, `@inertiaHead`, and more). A custom `createInertiaEngine()` is provided so templates load through Express's normal view engine mechanism.
+EJS. A custom `createInertiaEngine()` is provided so templates load through Express's normal view engine mechanism, with Inertia and Vite helpers exposed as template locals (`inertia()`, `vite()`, `csrf()`, `inertiaHead()`, and more).
 
 ### Is express-inertia compatible with edge runtimes?
 

@@ -152,10 +152,10 @@ app.listen(3000, () => {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Task Manager</title>
-  @vite('resources/js/app.tsx')
+  <%- vite('resources/js/app.tsx') %>
 </head>
 <body>
-  @inertia
+  <%- inertia() %>
 </body>
 </html>`}
         </CodeBlock>
@@ -434,7 +434,7 @@ router.get('/dashboard', (req, res) => {
 
         <H2 id="vite">Vite config</H2>
         <P>
-          Wire up Vite so <code>@vite('resources/js/app.tsx')</code> resolves to
+          Wire up Vite so <code>vite('resources/js/app.tsx')</code> resolves to
           the dev server (via the <code>hot</code> file) or to hashed production
           assets:
         </P>

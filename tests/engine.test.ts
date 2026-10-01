@@ -1,14 +1,13 @@
 import { describe, it, expect, vi, afterAll, beforeEach, afterEach } from 'vitest';
-import { compileBladeDirectives, registerDirective } from '../src/directives.js';
 import { createInertiaEngine, clearEngineCache } from '../src/engine.js';
-import type { BladeEngineOptions, Page } from '../src/types.js';
+import type { InertiaEngineOptions, Page } from '../src/types.js';
 import path from 'path';
 import fs from 'fs';
 
 const tempPublicDir = path.join(__dirname, 'temp_vite_engine');
 const tempHotFile = path.join(tempPublicDir, 'hot');
 
-function createTestEngine(options: BladeEngineOptions = {}) {
+function createTestEngine(options: InertiaEngineOptions = {}) {
   fs.mkdirSync(tempPublicDir, { recursive: true });
   fs.writeFileSync(tempHotFile, 'http://localhost:5173\n');
   return createInertiaEngine({
@@ -22,70 +21,29 @@ afterAll(() => {
   fs.rmSync(tempPublicDir, { recursive: true, force: true });
 });
 
-describe('Blade Directives & Component Compiler', () => {
-  it('compiles Blade directives to EJS tags', () => {
-    const bladeTemplate = `
-      <head>
-        @inertiaHead
-        @viteReactRefresh
-        @vite('src/main.ts')
-        @vite(['src/main.ts', 'src/style.css'])
-      </head>
-      <body>
-        @csrf
-        @inertia
-        @inertia('custom-app')
-        @routes
-        @json(user)
-      </body>
-    `;
+describe('EJS Rendering & Helpers', () => {
+  it('renders native EJS helpers from a template source', async () => {
+    const engine = createInertiaEngine({
+      cache: false,
+      templateSource: `<head><%- inertiaHead() %></head><body><%- inertia() %></body>`,
+    });
 
-    const compiled = compileBladeDirectives(bladeTemplate);
+    const page = {
+      component: 'Home',
+      props: { title: 'Welcome' },
+      url: '/',
+      version: '1.0',
+    };
 
-    expect(compiled).toContain('<%- inertiaHead() %>');
-    expect(compiled).toContain('<%- viteReactRefresh() %>');
-    expect(compiled).toContain("<%- vite('src/main.ts') %>");
-    expect(compiled).toContain("<%- vite(['src/main.ts', 'src/style.css']) %>");
-    expect(compiled).toContain('<%- csrf() %>');
-    expect(compiled).toContain('<%- inertia() %>');
-    expect(compiled).toContain("<%- inertia('custom-app') %>");
-    expect(compiled).toContain('<%- routes() %>');
-    expect(compiled).toContain('<%- json(user) %>');
-  });
+    const html = await new Promise<string>((resolve, reject) => {
+      engine('/nonexistent/base.ejs', { page }, (err, res) => {
+        if (err) return reject(err);
+        resolve(res || '');
+      });
+    });
 
-  it('compiles Blade component syntax (<x-... />) to EJS tags', () => {
-    const componentTemplate = `
-      <head>
-        <x-inertia-head />
-        <x-vite-react-refresh />
-        <x-vite src="src/app.tsx" />
-      </head>
-      <body>
-        <x-csrf />
-        <x-inertia />
-        <x-inertia id="root" />
-        <x-routes />
-      </body>
-    `;
-
-    const compiled = compileBladeDirectives(componentTemplate);
-
-    expect(compiled).toContain('<%- inertiaHead() %>');
-    expect(compiled).toContain('<%- viteReactRefresh() %>');
-    expect(compiled).toContain("<%- vite('src/app.tsx') %>");
-    expect(compiled).toContain('<%- csrf() %>');
-    expect(compiled).toContain('<%- inertia() %>');
-    expect(compiled).toContain("<%- inertia('root') %>");
-    expect(compiled).toContain('<%- routes() %>');
-  });
-
-  it('supports custom registered Blade directives', () => {
-    registerDirective('uppercase', (args) => `<%= (${args}).toUpperCase() %>`);
-
-    const template = '<h1>@uppercase(title)</h1>';
-    const compiled = compileBladeDirectives(template);
-
-    expect(compiled).toBe('<h1><%= (title).toUpperCase() %></h1>');
+    expect(html).toContain('<div id="app">');
+    expect(html).toContain('"component":"Home"');
   });
 
   it('renders EJS template with createInertiaEngine', async () => {

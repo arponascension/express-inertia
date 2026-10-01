@@ -20,7 +20,7 @@ describe('express-inertia Middleware', () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
-    // Set up EJS engine with Blade directives
+    // Set up the EJS view engine
     app.engine(
       'ejs',
       createInertiaEngine({
@@ -36,7 +36,7 @@ describe('express-inertia Middleware', () => {
     fs.rmSync(tempPublicDir, { recursive: true, force: true });
   });
 
-  it('renders initial full HTML page with @inertia and serialized data-page', async () => {
+  it('renders initial full HTML page with inertia() and serialized data-page', async () => {
     app.use(
       inertia({
         rootView: 'app.ejs',

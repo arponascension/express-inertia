@@ -112,7 +112,7 @@ export default function ApiReference() {
         <OptionTable
           headings={['Export path', 'Contents']}
           rows={[
-            [code('"." (main)'), 'Middleware, prop helpers, security, SSR, logging, prefetch, directives, Vite helpers, types'],
+            [code('"." (main)'), 'Middleware, prop helpers, security, SSR, logging, prefetch, Vite helpers, types'],
             [code('"./vite"'), 'ViteHelper class and inertiaVitePlugin for vite.config.ts'],
             [code('"./engine"'), 'EJS view engine factory for app.engine()'],
           ]}
@@ -145,7 +145,7 @@ export default function ApiReference() {
             ['encryptHistory', code('undefined'), 'Inertia v2 history encryption'],
             ['vite', code('undefined'), 'ViteConfig — consumed by createInertiaEngine(), the middleware itself ignores it'],
             ['inertiaVersion', code('2'), 'Protocol version for the HTML page payload'],
-            ['rootElement', code('true'), 'Render the root <div> automatically; false outputs the JSON script tag only (custom id is set via @inertia(id))'],
+            ['rootElement', code('true'), 'Render the root <div> automatically; false outputs the JSON script tag only (custom id is set via inertia(id))'],
             ['viewData', code('undefined'), 'Extra data passed only to the root template'],
             ['security', code('defaults'), 'Security hardening settings'],
           ]}
@@ -205,8 +205,8 @@ export default function ApiReference() {
 
         <H2 id="engine">View engine</H2>
         <Signature
-          signature="createInertiaEngine(options?: BladeEngineOptions): Engine"
-          description="Creates an Express-compatible EJS engine with Blade directive support."
+          signature="createInertiaEngine(options?: InertiaEngineOptions): Engine"
+          description="Creates an Express-compatible EJS engine with Inertia and Vite helpers."
         />
         <Signature
           signature="inertiaEngine: Engine"
@@ -217,31 +217,25 @@ export default function ApiReference() {
           description="Clears all compiled template caches."
         />
         <h3 className="mb-3 mt-8 font-display text-2xl font-semibold text-primary">
-          Blade directives
+          Template helpers
         </h3>
         <OptionTable
-          headings={['Directive', 'Output']}
+          headings={['EJS helper', 'Output']}
           rows={[
-            ['@inertia', 'Renders <div id="app"> + the JSON script tag'],
-            ["@inertia('root')", 'Custom root element id'],
-            ['@inertiaScript', 'JSON script tag only'],
-            ['@inertiaHead', 'SSR head tags'],
-            ["@vite('src/main.ts')", 'Dev HMR or production manifest tags'],
-            ['@viteReactRefresh', 'React Fast Refresh preamble'],
-            ['@csrf', 'CSRF hidden input'],
-            ['@routes', 'Ziggy route definitions'],
-            ['@json(value)', 'JSON.stringify output'],
-            ['<x-inertia … />', 'Component form of @inertia (id attribute sets the root element id)'],
-            ['<x-vite src="…" />', 'Component form of @vite (src or entries attribute)'],
-            ['<x-inertia-script id="…" />', 'Component form of @inertiaScript'],
+            ['<%- inertia() %>', 'Renders <div id="app"> + the JSON script tag'],
+            ["<%- inertia('root') %>", 'Custom root element id'],
+            ['<%- inertiaScript() %>', 'JSON script tag only'],
+            ['<%- inertiaHead() %>', 'SSR head tags'],
+            ["<%- vite('src/main.ts') %>", 'Dev HMR or production manifest tags'],
+            ['<%- viteReactRefresh() %>', 'React Fast Refresh preamble'],
+            ['<%- csrf() %>', 'CSRF hidden input'],
+            ['<%- routes() %>', 'Ziggy route definitions'],
+            ['<%- json(value) %>', 'JSON.stringify output'],
           ]}
         />
         <P>
-          Custom directives (via <code>registerDirective()</code> or the
-          engine's <code>directives</code> option) receive the raw argument
-          text — <code>{'@hello(\'World\')'}</code> passes{' '}
-          <code>{`'World'`}</code> including quotes — and return compiled EJS
-          markup.
+          The helpers receive ordinary JavaScript arguments and return HTML
+          markup, so they compose with the rest of EJS.
         </P>
 
         <H2 id="vite">Vite helper ("./vite")</H2>
@@ -399,7 +393,7 @@ export default function ApiReference() {
         />
 
         <Callout type="note">
-          For the full <code>ViteConfig</code>, <code>BladeEngineOptions</code>,{' '}
+          For the full <code>ViteConfig</code>, <code>InertiaEngineOptions</code>,{' '}
           <code>SecurityOptions</code>, <code>CircuitBreakerOptions</code>, and{' '}
           <code>RetryOptions</code> defaults, see the README or the TypeScript
           declarations in{' '}

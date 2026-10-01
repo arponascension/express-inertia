@@ -1,7 +1,6 @@
 import fs from 'fs';
 import ejs from 'ejs';
-import type { BladeEngineOptions, Page, SSRResult } from './types.js';
-import { compileBladeDirectives } from './directives.js';
+import type { InertiaEngineOptions, Page, SSRResult } from './types.js';
 import { createViteHelper, ViteHelper } from './vite.js';
 import { serializePage, escapeHtmlAttr } from './utils.js';
 
@@ -22,9 +21,9 @@ const engineTimestamps: Set<Map<string, number>> = new Set();
 const TEMPLATE_SOURCE_KEY = '__express_inertia_template_source__';
 
 /**
- * Creates an Express view engine with Blade directive support and built-in Inertia/Vite helpers.
+ * Creates an Express EJS view engine with built-in Inertia/Vite helpers.
  */
-export function createInertiaEngine(options?: BladeEngineOptions) {
+export function createInertiaEngine(options?: InertiaEngineOptions) {
   const viteHelper: ViteHelper = options?.vite ? createViteHelper(options.vite) : createViteHelper();
   const shouldCache = options?.cache ?? !viteHelper.isDev();
 
@@ -36,7 +35,7 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
   engineCaches.add(templateCache);
   engineTimestamps.add(templateTimestamps);
 
-  return function inertiaBladeEngine(
+  return function inertiaEjsEngine(
     filePath: string,
     rawOptions: Record<string, any>,
     callback: (err: Error | null, html?: string) => void
@@ -68,7 +67,7 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
         const templateSource = template !== undefined ? template : fs.readFileSync(filePath, 'utf-8');
         const compiledSource = options?.compileTemplate
           ? options.compileTemplate(templateSource)
-          : compileBladeDirectives(templateSource, options?.directives);
+          : templateSource;
 
         compiledTemplate = ejs.compile(compiledSource, {
           filename: filePath,
@@ -88,7 +87,7 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
       const effectiveVersion = locals.inertiaVersion ?? inertiaVersion;
       const shouldRenderRootElement = locals.rootElement ?? defaultRootElement;
 
-      // Provide standard Inertia and Blade helpers
+      // Provide standard Inertia and Vite helpers
       locals.inertiaScript = (id: string = 'app') => {
         if (!page) return '';
         const jsonSafe = JSON.stringify(page).replace(/</g, '\\u003c');
@@ -181,7 +180,7 @@ export function createInertiaEngine(options?: BladeEngineOptions) {
 }
 
 /**
- * Default Inertia Blade EJS engine instance.
+ * Default Inertia EJS engine instance.
  */
 export const inertiaEngine = createInertiaEngine();
 

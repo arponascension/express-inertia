@@ -157,6 +157,10 @@ app.listen(3000, () => console.log('Server running on http://localhost:3000'));
 </html>
 ```
 
+Keep the `inertia` attribute on the title element. It allows the Inertia
+client adapter to replace the server-rendered title during client-side
+navigation.
+
 ### 3. Configure the Vue 3 client (`src/main.ts`)
 
 ```ts
@@ -202,6 +206,34 @@ createInertiaApp({
   },
 });
 ```
+
+Set page titles with Inertia's `Head` component, not only with a server prop.
+The EJS root view is rendered only on the initial full-page request; subsequent
+`<Link>` navigations receive JSON and do not render the EJS template again.
+
+```tsx
+import { Head } from '@inertiajs/react';
+
+export default function Dashboard() {
+  return (
+    <>
+      <Head title="Dashboard" />
+      <h1>Dashboard</h1>
+    </>
+  );
+}
+```
+
+For a shared suffix, configure the callback once:
+
+```tsx
+createInertiaApp({
+  titleCallback: (title) => `${title} | My App`,
+  // resolve and setup...
+});
+```
+
+For Vue, use the equivalent `Head` component from `@inertiajs/vue3`.
 
 For React, use a `.tsx` entrypoint in the root view and include `<%- viteReactRefresh() %>` before `<%- vite('src/main.tsx') %>`:
 

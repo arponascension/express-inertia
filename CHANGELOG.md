@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed the `BladeEngineOptions` type to `InertiaEngineOptions`; the engine's
   `directives` option was removed.
 
+## [1.6.1] - 2026-10-02
+
+### Fixed
+
+- Documented the client-side document title flow for React and Vue. The root
+  EJS template is rendered only on the initial request, so pages must use the
+  client adapter's `Head` component for titles to update during Inertia
+  navigation.
+- Clarified that the root `<title>` must keep the `inertia` attribute.
+
 ## [1.5.2] - 2026-09-13
 
 ### Added

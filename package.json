@@ -1,6 +1,6 @@
 {
   "name": "@arponascension/express-inertia",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Inertia.js adapter and middleware for Express.js — build SPAs with Vue 3, React, or Svelte using classic server-side routing, EJS templates, Vite, and server-side rendering (SSR).",
   "homepage": "https://github.com/arponascension/express-inertia#readme",
   "repository": {
@@ -37,6 +37,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",

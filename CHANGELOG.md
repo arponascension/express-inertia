@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   navigation.
 - Clarified that the root `<title>` must keep the `inertia` attribute.
 
+## [1.6.2] - 2026-10-02
+
+### Fixed
+
+- Added the `prepare` build hook so Git-based installs build and expose the
+  package's `dist` entrypoints, including the Vite plugin export.
+
 ## [1.5.2] - 2026-09-13
 
 ### Added
